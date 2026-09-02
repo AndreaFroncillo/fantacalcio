@@ -6,6 +6,7 @@ use App\Domain\Football\Enums\FootballPlayerStatus;
 use Database\Factories\Football\FootballPlayerFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class FootballPlayer extends Model
@@ -36,5 +37,10 @@ class FootballPlayer extends Model
             'date_of_birth' => 'date',
             'status' => FootballPlayerStatus::class,
         ];
+    }
+
+    public function playerSeasons(): HasMany
+    {
+        return $this->hasMany(PlayerSeason::class);
     }
 }
