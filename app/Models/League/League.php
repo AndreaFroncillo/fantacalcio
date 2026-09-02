@@ -6,6 +6,7 @@ use Database\Factories\League\LeagueFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 #[Fillable([
@@ -25,5 +26,10 @@ class League extends Model
                 $league->ulid = (string) Str::ulid();
             }
         });
+    }
+
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(LeagueMembership::class);
     }
 }
