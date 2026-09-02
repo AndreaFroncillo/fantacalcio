@@ -116,11 +116,25 @@ class PlayerSeasonTest extends TestCase
     {
         $footballPlayer = FootballPlayer::factory()->create();
 
+        $firstSeason = FootballSeason::factory()->create([
+            'name' => 'Serie A 2026/2027',
+            'start_year' => 2026,
+            'end_year' => 2027,
+        ]);
+
+        $secondSeason = FootballSeason::factory()->create([
+            'name' => 'Serie A 2027/2028',
+            'start_year' => 2027,
+            'end_year' => 2028,
+        ]);
+
         PlayerSeason::factory()->create([
+            'football_season_id' => $firstSeason->id,
             'football_player_id' => $footballPlayer->id,
         ]);
 
         PlayerSeason::factory()->create([
+            'football_season_id' => $secondSeason->id,
             'football_player_id' => $footballPlayer->id,
         ]);
 
