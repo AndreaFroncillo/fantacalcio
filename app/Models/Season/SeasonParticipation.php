@@ -4,10 +4,12 @@ namespace App\Models\Season;
 
 use App\Domain\Season\Enums\SeasonParticipationStatus;
 use App\Models\League\LeagueMembership;
+use App\Models\Team\Team;
 use Database\Factories\Season\SeasonParticipationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 class SeasonParticipation extends Model
@@ -45,5 +47,10 @@ class SeasonParticipation extends Model
     public function leagueMembership(): BelongsTo
     {
         return $this->belongsTo(LeagueMembership::class);
+    }
+
+    public function team(): HasOne
+    {
+        return $this->hasOne(Team::class);
     }
 }
