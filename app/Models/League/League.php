@@ -2,6 +2,7 @@
 
 namespace App\Models\League;
 
+use App\Models\Season\LeagueSeason;
 use Database\Factories\League\LeagueFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -36,5 +37,10 @@ class League extends Model
     public function invitations(): HasMany
     {
         return $this->hasMany(LeagueInvitation::class);
+    }
+
+    public function seasons(): HasMany
+    {
+        return $this->hasMany(LeagueSeason::class);
     }
 }
