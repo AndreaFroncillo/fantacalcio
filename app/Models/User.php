@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\League\LeagueInvitation;
 use App\Models\League\LeagueMembership;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -55,5 +56,13 @@ class User extends Authenticatable
     public function leagueMemberships(): HasMany
     {
         return $this->hasMany(LeagueMembership::class);
+    }
+
+    public function sentLeagueInvitations(): HasMany
+    {
+        return $this->hasMany(
+            LeagueInvitation::class,
+            'invited_by_user_id'
+        );
     }
 }

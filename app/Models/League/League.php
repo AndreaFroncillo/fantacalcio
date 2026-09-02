@@ -32,4 +32,9 @@ class League extends Model
     {
         return $this->hasMany(LeagueMembership::class);
     }
+
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(LeagueInvitation::class);
+    }
 }
