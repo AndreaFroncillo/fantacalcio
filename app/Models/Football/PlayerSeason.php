@@ -4,10 +4,12 @@ namespace App\Models\Football;
 
 use App\Domain\Football\Enums\PlayerRole;
 use App\Domain\Football\Enums\PlayerSeasonStatus;
+use App\Models\Roster\RosterOwnership;
 use Database\Factories\Football\PlayerSeasonFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class PlayerSeason extends Model
@@ -51,5 +53,10 @@ class PlayerSeason extends Model
     public function realClub(): BelongsTo
     {
         return $this->belongsTo(RealClub::class);
+    }
+
+    public function rosterOwnerships(): HasMany
+    {
+        return $this->hasMany(RosterOwnership::class);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Models\Season;
 use App\Domain\Season\Enums\LeagueSeasonStatus;
 use App\Models\League\League;
 use App\Models\Roster\LeagueSeasonRosterRule;
+use App\Models\Roster\RosterOwnership;
 use Database\Factories\Season\LeagueSeasonFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -64,5 +65,10 @@ class LeagueSeason extends Model
     public function rosterRules(): HasMany
     {
         return $this->hasMany(LeagueSeasonRosterRule::class);
+    }
+
+    public function rosterOwnerships(): HasMany
+    {
+        return $this->hasMany(RosterOwnership::class);
     }
 }
