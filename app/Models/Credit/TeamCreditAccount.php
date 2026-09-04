@@ -7,6 +7,7 @@ use Database\Factories\Credit\TeamCreditAccountFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class TeamCreditAccount extends Model
@@ -38,5 +39,10 @@ class TeamCreditAccount extends Model
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
+    }
+
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(CreditTransaction::class);
     }
 }
