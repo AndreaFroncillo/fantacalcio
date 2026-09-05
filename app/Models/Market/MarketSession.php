@@ -8,6 +8,7 @@ use Database\Factories\Market\MarketSessionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class MarketSession extends Model
@@ -42,5 +43,10 @@ class MarketSession extends Model
     public function leagueSeason(): BelongsTo
     {
         return $this->belongsTo(LeagueSeason::class);
+    }
+
+    public function capabilities(): HasMany
+    {
+        return $this->hasMany(MarketCapability::class);
     }
 }
