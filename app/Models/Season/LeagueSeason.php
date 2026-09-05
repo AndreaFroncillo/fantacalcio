@@ -4,6 +4,7 @@ namespace App\Models\Season;
 
 use App\Domain\Season\Enums\LeagueSeasonStatus;
 use App\Models\League\League;
+use App\Models\Market\MarketSession;
 use App\Models\Roster\LeagueSeasonRosterRule;
 use App\Models\Roster\RosterOwnership;
 use Database\Factories\Season\LeagueSeasonFactory;
@@ -70,5 +71,10 @@ class LeagueSeason extends Model
     public function rosterOwnerships(): HasMany
     {
         return $this->hasMany(RosterOwnership::class);
+    }
+
+    public function marketSessions(): HasMany
+    {
+        return $this->hasMany(MarketSession::class);
     }
 }
