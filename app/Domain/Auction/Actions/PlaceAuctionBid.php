@@ -44,7 +44,7 @@ class PlaceAuctionBid
 
             if (
                 $nomination->expires_at &&
-                $nomination->expires_at->isPast()
+                ! $nomination->expires_at->isAfter(now())
             ) {
                 throw new RuntimeException(
                     'Auction nomination timer has expired.'

@@ -12,6 +12,8 @@ use App\Domain\Football\Enums\PlayerRole;
 use App\Domain\Market\Enums\MarketCapabilityType;
 use App\Domain\Market\Enums\MarketSessionStatus;
 use App\Models\Auction\Auction;
+use App\Models\Auction\AuctionNomination;
+use App\Models\Auction\AuctionParticipant;
 use App\Models\Credit\TeamCreditAccount;
 use App\Models\Football\FootballSeason;
 use App\Models\Football\PlayerSeason;
@@ -788,6 +790,38 @@ class PlaceAuctionBidTest extends TestCase
             $nomination,
             $participant,
             10
+        );
+    }
+
+    public function test_it_fails_when_bid_is_placed_exactly_at_expiration(): void
+    {
+        $now = now()->startOfSecond();
+
+        $this->travelTo($now);
+
+        $auction = Auction::factory()
+            ->live()
+            ->create();
+
+        $nomination = AuctionNomination::factory()->create([
+            'auction_id' => $auction->id,
+            'status' => AuctionNominationStatus::ACTIVE,
+            'expires_at' => $now,
+        ]);
+
+        $participant = AuctionParticipant::factory()->create([
+            'auction_id' => $auction->id,
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage(
+            'Auction nomination timer has expired.'
+        );
+
+        app(PlaceAuctionBid::class)->execute(
+            $nomination,
+            $participant,
+            1
         );
     }
 }
