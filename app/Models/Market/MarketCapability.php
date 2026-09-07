@@ -7,6 +7,7 @@ use Database\Factories\Market\MarketCapabilityFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class MarketCapability extends Model
@@ -38,5 +39,10 @@ class MarketCapability extends Model
     public function marketSession(): BelongsTo
     {
         return $this->belongsTo(MarketSession::class);
+    }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(MarketCapabilityEvent::class);
     }
 }
