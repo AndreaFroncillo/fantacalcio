@@ -3,12 +3,14 @@
 namespace App\Models\Roster;
 
 use App\Models\Football\PlayerSeason;
+use App\Models\Market\PlayerRelease;
 use App\Models\Season\LeagueSeason;
 use App\Models\Team\Team;
 use Database\Factories\Roster\RosterOwnershipFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 class RosterOwnership extends Model
@@ -54,5 +56,10 @@ class RosterOwnership extends Model
     public function playerSeason(): BelongsTo
     {
         return $this->belongsTo(PlayerSeason::class);
+    }
+
+    public function playerRelease(): HasOne
+    {
+        return $this->hasOne(PlayerRelease::class);
     }
 }

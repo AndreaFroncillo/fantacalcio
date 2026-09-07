@@ -55,4 +55,9 @@ class MarketSession extends Model
     {
         return $this->hasOne(MarketReleaseRule::class);
     }
+
+    public function playerReleases(): HasMany
+    {
+        return $this->hasMany(PlayerRelease::class);
+    }
 }

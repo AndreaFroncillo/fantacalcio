@@ -4,6 +4,7 @@ namespace App\Models\Team;
 
 use App\Domain\Team\Enums\TeamStatus;
 use App\Models\Credit\TeamCreditAccount;
+use App\Models\Market\PlayerRelease;
 use App\Models\Roster\RosterOwnership;
 use App\Models\Season\SeasonParticipation;
 use Database\Factories\Team\TeamFactory;
@@ -54,5 +55,10 @@ class Team extends Model
     public function rosterOwnerships(): HasMany
     {
         return $this->hasMany(RosterOwnership::class);
+    }
+
+    public function playerReleases(): HasMany
+    {
+        return $this->hasMany(PlayerRelease::class);
     }
 }
