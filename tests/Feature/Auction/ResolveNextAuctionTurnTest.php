@@ -338,7 +338,7 @@ class ResolveNextAuctionTurnTest extends TestCase
         ]);
     }
 
-    public function test_it_stops_after_a_full_cycle_when_no_participant_has_credits(): void
+    public function test_it_returns_null_after_a_full_cycle_when_no_participant_is_eligible(): void
     {
         $auction = $this->createStartedAuction(3);
 
@@ -353,16 +353,9 @@ class ResolveNextAuctionTurnTest extends TestCase
             ]);
         }
 
-        try {
-            app(ResolveNextAuctionTurn::class)->execute($auction);
+        $result = app(ResolveNextAuctionTurn::class)->execute($auction);
 
-            $this->fail('Expected RuntimeException was not thrown.');
-        } catch (RuntimeException $exception) {
-            $this->assertSame(
-                'Auction has no eligible participants for the current role phase.',
-                $exception->getMessage()
-            );
-        }
+        $this->assertNull($result);
 
         $this->assertDatabaseCount('auction_turn_skips', 3);
 

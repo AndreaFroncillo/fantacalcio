@@ -10,7 +10,7 @@ use RuntimeException;
 
 class ResolveNextAuctionTurn
 {
-    public function execute(Auction $auction): array
+    public function execute(Auction $auction): ?array
     {
         $participants = $auction->participants()
             ->with('team.creditAccount')
@@ -140,9 +140,7 @@ class ResolveNextAuctionTurn
             ];
         }
 
-        throw new RuntimeException(
-            'Auction has no eligible participants for the current role phase.'
-        );
+        return null;
     }
 
     private function nextTurnNumber(Auction $auction): int
