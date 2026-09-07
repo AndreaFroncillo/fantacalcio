@@ -8,6 +8,7 @@ use Database\Factories\Auction\AuctionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class Auction extends Model
@@ -45,5 +46,11 @@ class Auction extends Model
     public function marketSession(): BelongsTo
     {
         return $this->belongsTo(MarketSession::class);
+    }
+
+    public function rolePhases(): HasMany
+    {
+        return $this->hasMany(AuctionRolePhase::class)
+            ->orderBy('position');
     }
 }
