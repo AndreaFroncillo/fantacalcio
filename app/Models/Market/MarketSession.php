@@ -3,6 +3,7 @@
 namespace App\Models\Market;
 
 use App\Domain\Market\Enums\MarketSessionStatus;
+use App\Models\Auction\Auction;
 use App\Models\Season\LeagueSeason;
 use Database\Factories\Market\MarketSessionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -59,5 +60,10 @@ class MarketSession extends Model
     public function playerReleases(): HasMany
     {
         return $this->hasMany(PlayerRelease::class);
+    }
+
+    public function auction(): HasOne
+    {
+        return $this->hasOne(Auction::class);
     }
 }
