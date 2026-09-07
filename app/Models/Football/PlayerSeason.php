@@ -4,6 +4,7 @@ namespace App\Models\Football;
 
 use App\Domain\Football\Enums\PlayerRole;
 use App\Domain\Football\Enums\PlayerSeasonStatus;
+use App\Models\Auction\AuctionNomination;
 use App\Models\Market\PlayerRelease;
 use App\Models\Roster\RosterOwnership;
 use Database\Factories\Football\PlayerSeasonFactory;
@@ -64,5 +65,10 @@ class PlayerSeason extends Model
     public function playerReleases(): HasMany
     {
         return $this->hasMany(PlayerRelease::class);
+    }
+
+    public function auctionNominations(): HasMany
+    {
+        return $this->hasMany(AuctionNomination::class);
     }
 }

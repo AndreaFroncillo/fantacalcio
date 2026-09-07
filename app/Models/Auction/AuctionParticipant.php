@@ -49,4 +49,9 @@ class AuctionParticipant extends Model
     {
         return $this->hasMany(AuctionTurnSkip::class);
     }
+
+    public function nominations(): HasMany
+    {
+        return $this->hasMany(AuctionNomination::class);
+    }
 }

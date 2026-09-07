@@ -65,4 +65,10 @@ class Auction extends Model
         return $this->hasMany(AuctionTurnSkip::class)
             ->orderBy('turn_number');
     }
+
+    public function nominations(): HasMany
+    {
+        return $this->hasMany(AuctionNomination::class)
+            ->orderBy('turn_number');
+    }
 }
