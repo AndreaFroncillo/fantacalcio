@@ -3,6 +3,7 @@
 namespace App\Models\Team;
 
 use App\Domain\Team\Enums\TeamStatus;
+use App\Models\Auction\AuctionParticipant;
 use App\Models\Credit\TeamCreditAccount;
 use App\Models\Market\PlayerRelease;
 use App\Models\Roster\RosterOwnership;
@@ -60,5 +61,10 @@ class Team extends Model
     public function playerReleases(): HasMany
     {
         return $this->hasMany(PlayerRelease::class);
+    }
+
+    public function auctionParticipations(): HasMany
+    {
+        return $this->hasMany(AuctionParticipant::class);
     }
 }

@@ -53,4 +53,10 @@ class Auction extends Model
         return $this->hasMany(AuctionRolePhase::class)
             ->orderBy('position');
     }
+
+    public function participants(): HasMany
+    {
+        return $this->hasMany(AuctionParticipant::class)
+            ->orderBy('nomination_position');
+    }
 }
