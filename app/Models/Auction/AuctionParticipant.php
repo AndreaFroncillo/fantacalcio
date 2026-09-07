@@ -54,4 +54,9 @@ class AuctionParticipant extends Model
     {
         return $this->hasMany(AuctionNomination::class);
     }
+
+    public function bids(): HasMany
+    {
+        return $this->hasMany(AuctionBid::class);
+    }
 }

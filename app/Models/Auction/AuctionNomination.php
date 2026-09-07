@@ -10,6 +10,7 @@ use Database\Factories\Auction\AuctionNominationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class AuctionNomination extends Model
@@ -84,5 +85,11 @@ class AuctionNomination extends Model
             User::class,
             'closed_by_user_id'
         );
+    }
+
+    public function bids(): HasMany
+    {
+        return $this->hasMany(AuctionBid::class)
+            ->orderBy('sequence_number');
     }
 }

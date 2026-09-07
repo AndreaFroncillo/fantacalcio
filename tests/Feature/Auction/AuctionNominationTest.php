@@ -124,19 +124,23 @@ class AuctionNominationTest extends TestCase
     public function test_auction_has_nominations_ordered_by_turn_number(): void
     {
         $auction = Auction::factory()->create();
+        $playerSeason = PlayerSeason::factory()->create();
 
         $third = AuctionNomination::factory()->create([
             'auction_id' => $auction->id,
+            'player_season_id' => $playerSeason->id,
             'turn_number' => 3,
         ]);
 
         $first = AuctionNomination::factory()->create([
             'auction_id' => $auction->id,
+            'player_season_id' => $playerSeason->id,
             'turn_number' => 1,
         ]);
 
         $second = AuctionNomination::factory()->create([
             'auction_id' => $auction->id,
+            'player_season_id' => $playerSeason->id,
             'turn_number' => 2,
         ]);
 
