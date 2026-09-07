@@ -7,6 +7,7 @@ use Database\Factories\Auction\AuctionParticipantFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class AuctionParticipant extends Model
@@ -42,5 +43,10 @@ class AuctionParticipant extends Model
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
+    }
+
+    public function turnSkips(): HasMany
+    {
+        return $this->hasMany(AuctionTurnSkip::class);
     }
 }

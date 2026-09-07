@@ -8,6 +8,7 @@ use Database\Factories\Auction\AuctionRolePhaseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class AuctionRolePhase extends Model
@@ -45,5 +46,10 @@ class AuctionRolePhase extends Model
     public function auction(): BelongsTo
     {
         return $this->belongsTo(Auction::class);
+    }
+
+    public function turnSkips(): HasMany
+    {
+        return $this->hasMany(AuctionTurnSkip::class);
     }
 }
