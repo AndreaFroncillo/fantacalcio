@@ -13,7 +13,7 @@ use RuntimeException;
 class AdvanceAuctionRolePhase
 {
     public function __construct(
-        private ResolveNextAuctionTurn $resolveNextAuctionTurn
+        private HasEligibleAuctionParticipant $hasEligibleAuctionParticipant
     ) {}
 
     public function execute(
@@ -54,10 +54,11 @@ class AdvanceAuctionRolePhase
                 );
             }
 
-            $nextTurn = $this->resolveNextAuctionTurn
+            $hasEligibleParticipant = $this
+                ->hasEligibleAuctionParticipant
                 ->execute($auction);
 
-            if ($nextTurn !== null) {
+            if ($hasEligibleParticipant) {
                 return [
                     'has_eligible_participant' => true,
                     'next_phase' => null,

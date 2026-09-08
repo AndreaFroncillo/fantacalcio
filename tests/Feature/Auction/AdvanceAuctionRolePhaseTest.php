@@ -164,7 +164,7 @@ class AdvanceAuctionRolePhaseTest extends TestCase
         );
     }
 
-    public function test_it_preserves_skips_when_current_role_still_has_eligible_participants(): void
+    public function test_it_preserves_existing_skips_when_current_role_still_has_eligible_participants(): void
     {
         $auction = Auction::factory()
             ->live()
@@ -206,6 +206,15 @@ class AdvanceAuctionRolePhaseTest extends TestCase
             'max_players' => 3,
         ]);
 
+        $auction->turnSkips()->create([
+            'auction_role_phase_id' => $goalkeeperPhase->id,
+            'auction_participant_id' => $firstParticipant->id,
+            'turn_number' => 1,
+            'reason' => AuctionTurnSkipReason::NO_CREDITS,
+            'performed_by_user_id' => null,
+            'note' => null,
+        ]);
+
         try {
             app(AdvanceAuctionRolePhase::class)
                 ->execute($auction);
@@ -225,6 +234,11 @@ class AdvanceAuctionRolePhaseTest extends TestCase
             'turn_number' => 1,
             'reason' => AuctionTurnSkipReason::NO_CREDITS->value,
         ]);
+
+        $this->assertDatabaseCount(
+            'auction_turn_skips',
+            1
+        );
 
         $this->assertSame(
             AuctionRolePhaseStatus::ACTIVE,
@@ -459,7 +473,98 @@ class AdvanceAuctionRolePhaseTest extends TestCase
         );
     }
 
-    public function test_it_preserves_turn_skips_when_current_phase_is_completed(): void
+    public function test_it_preserves_existing_turn_skips_when_current_phase_is_completed(): void
+    {
+        $auction = Auction::factory()
+            ->live()
+            ->create();
+
+        $goalkeeperPhase = AuctionRolePhase::factory()
+            ->active()
+            ->create([
+                'auction_id' => $auction->id,
+                'role' => PlayerRole::GOALKEEPER,
+                'position' => 1,
+            ]);
+
+        $defenderPhase = AuctionRolePhase::factory()->create([
+            'auction_id' => $auction->id,
+            'role' => PlayerRole::DEFENDER,
+            'position' => 2,
+            'status' => AuctionRolePhaseStatus::PENDING,
+        ]);
+
+        $firstParticipant = AuctionParticipant::factory()->create([
+            'auction_id' => $auction->id,
+            'nomination_position' => 1,
+        ]);
+
+        $secondParticipant = AuctionParticipant::factory()->create([
+            'auction_id' => $auction->id,
+            'nomination_position' => 2,
+        ]);
+
+        TeamCreditAccount::factory()->create([
+            'team_id' => $firstParticipant->team_id,
+            'current_balance' => 0,
+        ]);
+
+        TeamCreditAccount::factory()->create([
+            'team_id' => $secondParticipant->team_id,
+            'current_balance' => 0,
+        ]);
+
+        LeagueSeasonRosterRule::factory()->create([
+            'league_season_id' => $auction
+                ->marketSession
+                ->league_season_id,
+            'role' => PlayerRole::GOALKEEPER,
+            'max_players' => 3,
+        ]);
+
+        $auction->turnSkips()->create([
+            'auction_role_phase_id' => $goalkeeperPhase->id,
+            'auction_participant_id' => $firstParticipant->id,
+            'turn_number' => 1,
+            'reason' => AuctionTurnSkipReason::NO_CREDITS,
+            'performed_by_user_id' => null,
+            'note' => null,
+        ]);
+
+        $auction->turnSkips()->create([
+            'auction_role_phase_id' => $goalkeeperPhase->id,
+            'auction_participant_id' => $secondParticipant->id,
+            'turn_number' => 2,
+            'reason' => AuctionTurnSkipReason::NO_CREDITS,
+            'performed_by_user_id' => null,
+            'note' => null,
+        ]);
+
+        $nextPhase = app(AdvanceAuctionRolePhase::class)
+            ->execute($auction);
+
+        $this->assertSame(
+            $defenderPhase->id,
+            $nextPhase->id
+        );
+
+        $this->assertSame(
+            AuctionRolePhaseStatus::COMPLETED,
+            $goalkeeperPhase->fresh()->status
+        );
+
+        $this->assertSame(
+            AuctionRolePhaseStatus::ACTIVE,
+            $defenderPhase->fresh()->status
+        );
+
+        $this->assertDatabaseCount(
+            'auction_turn_skips',
+            2
+        );
+    }
+
+    public function test_it_does_not_create_turn_skips_when_checking_phase_eligibility(): void
     {
         $auction = Auction::factory()
             ->live()
@@ -511,21 +616,14 @@ class AdvanceAuctionRolePhaseTest extends TestCase
         app(AdvanceAuctionRolePhase::class)
             ->execute($auction);
 
-        $this->assertDatabaseHas('auction_turn_skips', [
-            'auction_id' => $auction->id,
-            'auction_role_phase_id' => $goalkeeperPhase->id,
-            'auction_participant_id' => $firstParticipant->id,
-        ]);
-
-        $this->assertDatabaseHas('auction_turn_skips', [
-            'auction_id' => $auction->id,
-            'auction_role_phase_id' => $goalkeeperPhase->id,
-            'auction_participant_id' => $secondParticipant->id,
-        ]);
-
         $this->assertDatabaseCount(
             'auction_turn_skips',
-            2
+            0
+        );
+
+        $this->assertSame(
+            AuctionRolePhaseStatus::COMPLETED,
+            $goalkeeperPhase->fresh()->status
         );
     }
 }
