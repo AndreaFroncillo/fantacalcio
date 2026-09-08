@@ -19,7 +19,7 @@ class AdvanceAuctionRolePhase
     public function execute(
         Auction $auction
     ): ?AuctionRolePhase {
-        return DB::transaction(function () use ($auction) {
+        $result = DB::transaction(function () use ($auction) {
             $auction = Auction::query()
                 ->whereKey($auction->id)
                 ->lockForUpdate()
@@ -58,9 +58,10 @@ class AdvanceAuctionRolePhase
                 ->execute($auction);
 
             if ($nextTurn !== null) {
-                throw new RuntimeException(
-                    'Auction role phase still has eligible participants.'
-                );
+                return [
+                    'has_eligible_participant' => true,
+                    'next_phase' => null,
+                ];
             }
 
             $activePhase->update([
@@ -77,7 +78,10 @@ class AdvanceAuctionRolePhase
                 ->first();
 
             if (! $nextPhase) {
-                return null;
+                return [
+                    'has_eligible_participant' => false,
+                    'next_phase' => null,
+                ];
             }
 
             $nextPhase->update([
@@ -86,7 +90,18 @@ class AdvanceAuctionRolePhase
                 'completed_at' => null,
             ]);
 
-            return $nextPhase->refresh();
+            return [
+                'has_eligible_participant' => false,
+                'next_phase' => $nextPhase->refresh(),
+            ];
         });
+
+        if ($result['has_eligible_participant']) {
+            throw new RuntimeException(
+                'Auction role phase still has eligible participants.'
+            );
+        }
+
+        return $result['next_phase'];
     }
 }

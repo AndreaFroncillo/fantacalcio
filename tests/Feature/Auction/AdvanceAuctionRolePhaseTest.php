@@ -6,6 +6,7 @@ use App\Domain\Auction\Actions\AdvanceAuctionRolePhase;
 use App\Domain\Auction\Enums\AuctionNominationStatus;
 use App\Domain\Auction\Enums\AuctionRolePhaseStatus;
 use App\Domain\Auction\Enums\AuctionStatus;
+use App\Domain\Auction\Enums\AuctionTurnSkipReason;
 use App\Domain\Football\Enums\PlayerRole;
 use App\Models\Auction\Auction;
 use App\Models\Auction\AuctionNomination;
@@ -160,6 +161,74 @@ class AdvanceAuctionRolePhaseTest extends TestCase
         $this->assertSame(
             AuctionRolePhaseStatus::PENDING,
             $defenderPhase->fresh()->status
+        );
+    }
+
+    public function test_it_preserves_skips_when_current_role_still_has_eligible_participants(): void
+    {
+        $auction = Auction::factory()
+            ->live()
+            ->create();
+
+        $goalkeeperPhase = AuctionRolePhase::factory()
+            ->active()
+            ->create([
+                'auction_id' => $auction->id,
+                'role' => PlayerRole::GOALKEEPER,
+                'position' => 1,
+            ]);
+
+        $firstParticipant = AuctionParticipant::factory()->create([
+            'auction_id' => $auction->id,
+            'nomination_position' => 1,
+        ]);
+
+        $secondParticipant = AuctionParticipant::factory()->create([
+            'auction_id' => $auction->id,
+            'nomination_position' => 2,
+        ]);
+
+        TeamCreditAccount::factory()->create([
+            'team_id' => $firstParticipant->team_id,
+            'current_balance' => 0,
+        ]);
+
+        TeamCreditAccount::factory()->create([
+            'team_id' => $secondParticipant->team_id,
+            'current_balance' => 100,
+        ]);
+
+        LeagueSeasonRosterRule::factory()->create([
+            'league_season_id' => $auction
+                ->marketSession
+                ->league_season_id,
+            'role' => PlayerRole::GOALKEEPER,
+            'max_players' => 3,
+        ]);
+
+        try {
+            app(AdvanceAuctionRolePhase::class)
+                ->execute($auction);
+
+            $this->fail('Expected RuntimeException was not thrown.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame(
+                'Auction role phase still has eligible participants.',
+                $exception->getMessage()
+            );
+        }
+
+        $this->assertDatabaseHas('auction_turn_skips', [
+            'auction_id' => $auction->id,
+            'auction_role_phase_id' => $goalkeeperPhase->id,
+            'auction_participant_id' => $firstParticipant->id,
+            'turn_number' => 1,
+            'reason' => AuctionTurnSkipReason::NO_CREDITS->value,
+        ]);
+
+        $this->assertSame(
+            AuctionRolePhaseStatus::ACTIVE,
+            $goalkeeperPhase->fresh()->status
         );
     }
 
