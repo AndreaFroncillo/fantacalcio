@@ -8,6 +8,7 @@ use App\Models\Auction\Auction;
 use App\Models\Auction\AuctionNomination;
 use App\Models\Auction\AuctionParticipant;
 use App\Models\Auction\AuctionRolePhase;
+use App\Models\Football\FootballSeason;
 use App\Models\Football\PlayerSeason;
 use App\Models\User;
 use Illuminate\Database\QueryException;
@@ -274,12 +275,24 @@ class AuctionNominationTest extends TestCase
 
     public function test_same_turn_number_can_exist_in_different_auctions(): void
     {
+        $footballSeason = FootballSeason::factory()->create();
+
+        $firstPlayerSeason = PlayerSeason::factory()->create([
+            'football_season_id' => $footballSeason->id,
+        ]);
+
+        $secondPlayerSeason = PlayerSeason::factory()->create([
+            'football_season_id' => $footballSeason->id,
+        ]);
+
         $first = AuctionNomination::factory()->create([
             'turn_number' => 5,
+            'player_season_id' => $firstPlayerSeason->id,
         ]);
 
         $second = AuctionNomination::factory()->create([
             'turn_number' => 5,
+            'player_season_id' => $secondPlayerSeason->id,
         ]);
 
         $this->assertNotSame(
