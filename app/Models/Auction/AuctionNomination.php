@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 class AuctionNomination extends Model
@@ -91,5 +92,11 @@ class AuctionNomination extends Model
     {
         return $this->hasMany(AuctionBid::class)
             ->orderBy('sequence_number');
+    }
+
+    public function currentBid(): HasOne
+    {
+        return $this->hasOne(AuctionBid::class)
+            ->ofMany('sequence_number', 'max');
     }
 }

@@ -71,4 +71,9 @@ class Auction extends Model
         return $this->hasMany(AuctionNomination::class)
             ->orderBy('turn_number');
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

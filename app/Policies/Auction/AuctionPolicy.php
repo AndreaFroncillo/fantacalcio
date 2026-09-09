@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Policies\Auction;
+
+use App\Domain\League\Enums\LeagueMembershipStatus;
+use App\Models\Auction\Auction;
+use App\Models\League\LeagueMembership;
+use App\Models\User;
+
+class AuctionPolicy
+{
+    public function view(User $user, Auction $auction): bool
+    {
+        $leagueId = $auction
+            ->marketSession
+            ->leagueSeason
+            ->league_id;
+
+        return LeagueMembership::query()
+            ->where('league_id', $leagueId)
+            ->where('user_id', $user->id)
+            ->where('status', LeagueMembershipStatus::ACTIVE)
+            ->exists();
+    }
+}
