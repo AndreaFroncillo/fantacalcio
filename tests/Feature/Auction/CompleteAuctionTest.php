@@ -7,16 +7,27 @@ use App\Domain\Auction\Enums\AuctionNominationStatus;
 use App\Domain\Auction\Enums\AuctionRolePhaseStatus;
 use App\Domain\Auction\Enums\AuctionStatus;
 use App\Domain\Football\Enums\PlayerRole;
+use App\Events\Auction\AuctionCompleted;
 use App\Models\Auction\Auction;
 use App\Models\Auction\AuctionNomination;
 use App\Models\Auction\AuctionRolePhase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use RuntimeException;
 use Tests\TestCase;
 
 class CompleteAuctionTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Event::fake([
+            AuctionCompleted::class,
+        ]);
+    }
 
     public function test_it_fails_when_auction_is_not_live(): void
     {
@@ -193,6 +204,58 @@ class CompleteAuctionTest extends TestCase
         $this->assertEquals(
             $originalEndsAt,
             $marketSession->ends_at
+        );
+    }
+
+    public function test_it_dispatches_realtime_event_when_auction_is_completed(): void
+    {
+        $auction = Auction::factory()
+            ->live()
+            ->create();
+
+        AuctionRolePhase::factory()
+            ->completed()
+            ->create([
+                'auction_id' => $auction->id,
+                'role' => PlayerRole::GOALKEEPER,
+                'position' => 1,
+            ]);
+
+        $result = app(CompleteAuction::class)
+            ->execute($auction);
+
+        Event::assertDispatched(
+            AuctionCompleted::class,
+            function (AuctionCompleted $event) use ($result) {
+                return $event->auction->is($result)
+                    && $event->auction->status === AuctionStatus::COMPLETED;
+            }
+        );
+    }
+
+    public function test_it_does_not_dispatch_realtime_event_when_auction_completion_fails(): void
+    {
+        $auction = Auction::factory()
+            ->live()
+            ->create();
+
+        AuctionRolePhase::factory()
+            ->active()
+            ->create([
+                'auction_id' => $auction->id,
+                'role' => PlayerRole::GOALKEEPER,
+                'position' => 1,
+            ]);
+
+        try {
+            app(CompleteAuction::class)
+                ->execute($auction);
+        } catch (RuntimeException) {
+            //
+        }
+
+        Event::assertNotDispatched(
+            AuctionCompleted::class
         );
     }
 }

@@ -5,6 +5,7 @@ namespace App\Domain\Auction\Actions;
 use App\Domain\Auction\Enums\AuctionNominationStatus;
 use App\Domain\Auction\Enums\AuctionRolePhaseStatus;
 use App\Domain\Auction\Enums\AuctionStatus;
+use App\Events\Auction\AuctionCompleted;
 use App\Models\Auction\Auction;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -52,7 +53,11 @@ class CompleteAuction
                 'completed_at' => now(),
             ]);
 
-            return $auction->refresh();
+            $auction = $auction->refresh();
+
+            AuctionCompleted::dispatch($auction);
+
+            return $auction;
         });
     }
 }
