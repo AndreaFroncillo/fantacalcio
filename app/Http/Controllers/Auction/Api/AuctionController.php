@@ -79,6 +79,8 @@ class AuctionController extends Controller
         Auction $auction,
         StartAuctionNomination $startAuctionNomination
     ) {
+        Gate::authorize('nominate', $auction);
+
         $playerSeason = PlayerSeason::query()
             ->where('ulid', $request->validated('player_season_ulid'))
             ->firstOrFail();
@@ -89,16 +91,25 @@ class AuctionController extends Controller
                 $playerSeason,
                 $request->user()
             );
+
+            if ($nomination === null) {
+                abort(
+                    422,
+                    'Auction has no eligible participant for the active role phase.'
+                );
+            }
         } catch (RuntimeException $exception) {
             abort(422, $exception->getMessage());
         }
 
         return response()->json([
             'data' => [
-                'ulid' => $nomination?->ulid,
-                'player' => $nomination ? [
-                    'player_season_ulid' => $nomination->playerSeason->ulid,
-                ] : null,
+                'ulid' => $nomination->ulid,
+                'player' => [
+                    'player_season_ulid' => $nomination
+                        ->playerSeason
+                        ->ulid,
+                ],
             ],
         ]);
     }

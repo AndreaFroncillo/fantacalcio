@@ -186,4 +186,213 @@ class StartAuctionNominationTest extends TestCase
 
         $this->assertDatabaseCount('auction_nominations', 0);
     }
+
+    public function test_unauthenticated_user_cannot_start_nomination(): void
+    {
+        $auction = Auction::factory()->live()->create();
+
+        $response = $this->postJson(
+            "/api/auctions/{$auction->ulid}/nominations",
+            [
+                'player_season_ulid' => 'fake-ulid',
+            ]
+        );
+
+        $response->assertUnauthorized();
+    }
+
+    public function test_user_outside_league_cannot_start_nomination(): void
+    {
+        $auction = Auction::factory()->live()->create();
+
+        $user = User::factory()->create();
+
+        $playerSeason = $this->createValidPlayerSeasonForAuction($auction);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson(
+            "/api/auctions/{$auction->ulid}/nominations",
+            [
+                'player_season_ulid' => $playerSeason->ulid,
+            ]
+        );
+
+        $response->assertForbidden();
+    }
+
+    public function test_inactive_league_member_cannot_start_nomination(): void
+    {
+        $auction = Auction::factory()->live()->create();
+
+        $leagueSeason = $auction
+            ->marketSession
+            ->leagueSeason;
+
+        $user = User::factory()->create();
+
+        $playerSeason = $this->createValidPlayerSeasonForAuction($auction);
+
+        LeagueMembership::factory()
+            ->inactive()
+            ->create([
+                'league_id' => $leagueSeason->league_id,
+                'user_id' => $user->id,
+            ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson(
+            "/api/auctions/{$auction->ulid}/nominations",
+            [
+                'player_season_ulid' => $playerSeason->ulid,
+            ]
+        );
+
+        $response->assertForbidden();
+    }
+
+    public function test_player_season_ulid_is_required(): void
+    {
+        $auction = Auction::factory()->live()->create();
+
+        $leagueSeason = $auction
+            ->marketSession
+            ->leagueSeason;
+
+        $user = User::factory()->create();
+
+        LeagueMembership::factory()->create([
+            'league_id' => $leagueSeason->league_id,
+            'user_id' => $user->id,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson(
+            "/api/auctions/{$auction->ulid}/nominations"
+        );
+
+        $response
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'player_season_ulid',
+            ]);
+    }
+
+    public function test_player_season_ulid_must_exist(): void
+    {
+        $auction = Auction::factory()->live()->create();
+
+        $leagueSeason = $auction
+            ->marketSession
+            ->leagueSeason;
+
+        $user = User::factory()->create();
+
+        LeagueMembership::factory()->create([
+            'league_id' => $leagueSeason->league_id,
+            'user_id' => $user->id,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson(
+            "/api/auctions/{$auction->ulid}/nominations",
+            [
+                'player_season_ulid' => 'non-existent-ulid',
+            ]
+        );
+
+        $response
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'player_season_ulid',
+            ]);
+    }
+
+    public function test_nomination_cannot_start_when_no_participant_is_eligible(): void
+    {
+        $auction = Auction::factory()->live()->create();
+
+        $leagueSeason = $auction
+            ->marketSession
+            ->leagueSeason;
+
+        $user = User::factory()->create();
+
+        $membership = LeagueMembership::factory()->create([
+            'league_id' => $leagueSeason->league_id,
+            'user_id' => $user->id,
+        ]);
+
+        $participation = SeasonParticipation::factory()->create([
+            'league_season_id' => $leagueSeason->id,
+            'league_membership_id' => $membership->id,
+        ]);
+
+        $team = Team::factory()->create([
+            'season_participation_id' => $participation->id,
+        ]);
+
+        TeamCreditAccount::factory()->create([
+            'team_id' => $team->id,
+            'current_balance' => 0,
+        ]);
+
+        AuctionParticipant::factory()->create([
+            'auction_id' => $auction->id,
+            'team_id' => $team->id,
+            'nomination_position' => 1,
+        ]);
+
+        AuctionRolePhase::factory()->active()->create([
+            'auction_id' => $auction->id,
+            'role' => PlayerRole::GOALKEEPER,
+            'position' => 1,
+        ]);
+
+        LeagueSeasonRosterRule::factory()->create([
+            'league_season_id' => $leagueSeason->id,
+            'role' => PlayerRole::GOALKEEPER,
+            'max_players' => 3,
+        ]);
+
+        $playerSeason = $this->createValidPlayerSeasonForAuction($auction);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson(
+            "/api/auctions/{$auction->ulid}/nominations",
+            [
+                'player_season_ulid' => $playerSeason->ulid,
+            ]
+        );
+
+        $response
+            ->assertUnprocessable()
+            ->assertJsonPath(
+                'message',
+                'Auction has no eligible participant for the active role phase.'
+            );
+
+        $this->assertDatabaseCount('auction_nominations', 0);
+    }
+
+    private function createValidPlayerSeasonForAuction(Auction $auction): PlayerSeason
+    {
+        $leagueSeason = $auction
+            ->marketSession
+            ->leagueSeason;
+
+        $footballSeason = FootballSeason::factory()->create([
+            'start_year' => $leagueSeason->start_year,
+            'end_year' => $leagueSeason->end_year,
+        ]);
+
+        return PlayerSeason::factory()->create([
+            'football_season_id' => $footballSeason->id,
+            'role' => PlayerRole::GOALKEEPER,
+        ]);
+    }
 }

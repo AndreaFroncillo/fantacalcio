@@ -134,6 +134,8 @@ class AuctionBidTest extends TestCase
 
         $secondNomination = AuctionNomination::factory()->create([
             'auction_id' => $firstNomination->auction_id,
+            'auction_role_phase_id' => $firstNomination->auction_role_phase_id,
+            'player_season_id' => $firstNomination->player_season_id,
             'turn_number' => 2,
         ]);
 
