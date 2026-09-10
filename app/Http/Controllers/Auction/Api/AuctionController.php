@@ -197,4 +197,37 @@ class AuctionController extends Controller
             ],
         ]);
     }
+
+    public function rejectNomination(
+        Auction $auction,
+        AuctionNomination $nomination,
+        FinalizeAndProgressAuction $finalizeAndProgressAuction
+    ) {
+        Gate::authorize('reject', $auction);
+
+        if ($nomination->auction_id !== $auction->id) {
+            abort(404);
+        }
+
+        try {
+            $finalizeAndProgressAuction->execute(
+                $nomination,
+                AuctionNominationCloseReason::PRESIDENT_REJECTED,
+                request()->user()
+            );
+        } catch (RuntimeException $exception) {
+            abort(422, $exception->getMessage());
+        }
+
+        $nomination->refresh();
+
+        return response()->json([
+            'data' => [
+                'ulid' => $nomination->ulid,
+                'status' => $nomination->status->value,
+                'close_reason' => $nomination->close_reason?->value,
+                'closed_at' => $nomination->closed_at?->toISOString(),
+            ],
+        ]);
+    }
 }
