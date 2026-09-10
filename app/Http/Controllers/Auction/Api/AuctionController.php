@@ -4,11 +4,14 @@ namespace App\Http\Controllers\Auction\Api;
 
 use App\Domain\Auction\Actions\InitializeAuction;
 use App\Domain\Auction\Actions\StartAuction;
+use App\Domain\Auction\Actions\StartAuctionNomination;
 use App\Domain\Auction\Enums\AuctionNominationStatus;
 use App\Domain\Auction\Enums\AuctionRolePhaseStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auction\Api\StartAuctionNominationRequest;
 use App\Http\Resources\Auction\Api\AuctionResource;
 use App\Models\Auction\Auction;
+use App\Models\Football\PlayerSeason;
 use Illuminate\Support\Facades\Gate;
 use RuntimeException;
 
@@ -69,5 +72,34 @@ class AuctionController extends Controller
         }
 
         return new AuctionResource($auction);
+    }
+
+    public function startNomination(
+        StartAuctionNominationRequest $request,
+        Auction $auction,
+        StartAuctionNomination $startAuctionNomination
+    ) {
+        $playerSeason = PlayerSeason::query()
+            ->where('ulid', $request->validated('player_season_ulid'))
+            ->firstOrFail();
+
+        try {
+            $nomination = $startAuctionNomination->execute(
+                $auction,
+                $playerSeason,
+                $request->user()
+            );
+        } catch (RuntimeException $exception) {
+            abort(422, $exception->getMessage());
+        }
+
+        return response()->json([
+            'data' => [
+                'ulid' => $nomination?->ulid,
+                'player' => $nomination ? [
+                    'player_season_ulid' => $nomination->playerSeason->ulid,
+                ] : null,
+            ],
+        ]);
     }
 }

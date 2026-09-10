@@ -9,6 +9,7 @@ use App\Models\Auction\Auction;
 use App\Models\Auction\AuctionNomination;
 use App\Models\Football\PlayerSeason;
 use App\Models\Roster\RosterOwnership;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -20,9 +21,10 @@ class StartAuctionNomination
 
     public function execute(
         Auction $auction,
-        PlayerSeason $playerSeason
+        PlayerSeason $playerSeason,
+        User $user
     ): ?AuctionNomination {
-        return DB::transaction(function () use ($auction, $playerSeason) {
+        return DB::transaction(function () use ($auction, $playerSeason, $user) {
             $auction = Auction::query()
                 ->lockForUpdate()
                 ->findOrFail($auction->id);
@@ -99,6 +101,18 @@ class StartAuctionNomination
 
             if ($turn === null) {
                 return null;
+            }
+
+            $turnUserId = $turn['participant']
+                ->team
+                ->seasonParticipation
+                ->leagueMembership
+                ->user_id;
+
+            if ($turnUserId !== $user->id) {
+                throw new RuntimeException(
+                    'It is not this user\'s auction turn.'
+                );
             }
 
             $now = now();

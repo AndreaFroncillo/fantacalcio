@@ -21,6 +21,7 @@ use App\Models\Roster\LeagueSeasonRosterRule;
 use App\Models\Roster\RosterOwnership;
 use App\Models\Season\SeasonParticipation;
 use App\Models\Team\Team;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
 use Tests\TestCase;
@@ -46,7 +47,8 @@ class StartAuctionNominationTest extends TestCase
 
         $nomination = app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
 
         $this->assertSame(
@@ -152,7 +154,8 @@ class StartAuctionNominationTest extends TestCase
 
         app(StartAuctionNomination::class)->execute(
             $auction,
-            $firstPlayerSeason
+            $firstPlayerSeason,
+            $this->currentParticipantUser($auction)
         );
 
         $this->expectException(RuntimeException::class);
@@ -162,7 +165,8 @@ class StartAuctionNominationTest extends TestCase
 
         app(StartAuctionNomination::class)->execute(
             $auction,
-            $secondPlayerSeason
+            $secondPlayerSeason,
+            $this->currentParticipantUser($auction)
         );
     }
 
@@ -184,7 +188,8 @@ class StartAuctionNominationTest extends TestCase
 
         app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
     }
 
@@ -209,7 +214,8 @@ class StartAuctionNominationTest extends TestCase
 
         app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            User::factory()->create()
         );
     }
 
@@ -234,7 +240,8 @@ class StartAuctionNominationTest extends TestCase
 
         $nomination = app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
 
         $this->assertNull($nomination);
@@ -280,7 +287,8 @@ class StartAuctionNominationTest extends TestCase
 
         app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
     }
 
@@ -297,7 +305,8 @@ class StartAuctionNominationTest extends TestCase
 
         app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
 
         $this->expectException(RuntimeException::class);
@@ -307,7 +316,8 @@ class StartAuctionNominationTest extends TestCase
 
         app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
     }
 
@@ -324,7 +334,8 @@ class StartAuctionNominationTest extends TestCase
 
         $firstNomination = app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
 
         $firstNomination->update([
@@ -335,7 +346,8 @@ class StartAuctionNominationTest extends TestCase
 
         $secondNomination = app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
 
         $this->assertNotNull($secondNomination);
@@ -377,7 +389,8 @@ class StartAuctionNominationTest extends TestCase
 
         app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
     }
 
@@ -405,8 +418,20 @@ class StartAuctionNominationTest extends TestCase
 
         app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
+    }
+
+    private function currentParticipantUser(Auction $auction): User
+    {
+        return $auction->participants()
+            ->orderBy('nomination_position')
+            ->firstOrFail()
+            ->team
+            ->seasonParticipation
+            ->leagueMembership
+            ->user;
     }
 
     private function createFootballSeasonForAuction(Auction $auction): FootballSeason

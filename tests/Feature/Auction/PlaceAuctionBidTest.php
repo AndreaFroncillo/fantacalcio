@@ -21,6 +21,7 @@ use App\Models\Market\MarketCapability;
 use App\Models\Roster\LeagueSeasonRosterRule;
 use App\Models\Season\SeasonParticipation;
 use App\Models\Team\Team;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
@@ -53,7 +54,8 @@ class PlaceAuctionBidTest extends TestCase
 
         $nomination = app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
 
         $participant = $auction->participants()->firstOrFail();
@@ -185,7 +187,8 @@ class PlaceAuctionBidTest extends TestCase
 
         $nomination = app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
 
         $firstParticipant = $auction->participants()
@@ -235,7 +238,8 @@ class PlaceAuctionBidTest extends TestCase
 
         $nomination = app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
 
         $participant = $auction->participants()->firstOrFail();
@@ -300,7 +304,8 @@ class PlaceAuctionBidTest extends TestCase
 
         $nomination = app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
 
         $firstParticipant = $auction->participants()
@@ -348,7 +353,8 @@ class PlaceAuctionBidTest extends TestCase
 
         $nomination = app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
 
         $participant = $auction->participants()
@@ -394,7 +400,8 @@ class PlaceAuctionBidTest extends TestCase
 
         $nomination = app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
 
         $otherAuction = $this->createStartedAuction();
@@ -437,7 +444,8 @@ class PlaceAuctionBidTest extends TestCase
 
         $nomination = app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
 
         $nomination->update([
@@ -482,7 +490,8 @@ class PlaceAuctionBidTest extends TestCase
 
         $nomination = app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
 
         $auction->update([
@@ -526,7 +535,8 @@ class PlaceAuctionBidTest extends TestCase
 
         $nomination = app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
 
         $nomination->update([
@@ -570,7 +580,8 @@ class PlaceAuctionBidTest extends TestCase
 
         $nomination = app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
 
         $nomination->update([
@@ -619,7 +630,8 @@ class PlaceAuctionBidTest extends TestCase
 
             $nomination = app(StartAuctionNomination::class)->execute(
                 $auction,
-                $playerSeason
+                $playerSeason,
+                $this->currentParticipantUser($auction)
             );
 
             Carbon::setTestNow(
@@ -674,7 +686,8 @@ class PlaceAuctionBidTest extends TestCase
 
             $nomination = app(StartAuctionNomination::class)->execute(
                 $auction,
-                $playerSeason
+                $playerSeason,
+                $this->currentParticipantUser($auction)
             );
 
             Carbon::setTestNow(
@@ -724,7 +737,8 @@ class PlaceAuctionBidTest extends TestCase
 
         $nomination = app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
 
         $participant = $auction->participants()
@@ -772,7 +786,8 @@ class PlaceAuctionBidTest extends TestCase
 
         $nomination = app(StartAuctionNomination::class)->execute(
             $auction,
-            $playerSeason
+            $playerSeason,
+            $this->currentParticipantUser($auction)
         );
 
         $participant = $auction->participants()
@@ -823,5 +838,16 @@ class PlaceAuctionBidTest extends TestCase
             $participant,
             1
         );
+    }
+
+    private function currentParticipantUser(Auction $auction): User
+    {
+        return $auction->participants()
+            ->orderBy('nomination_position')
+            ->firstOrFail()
+            ->team
+            ->seasonParticipation
+            ->leagueMembership
+            ->user;
     }
 }

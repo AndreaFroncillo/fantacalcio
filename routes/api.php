@@ -7,4 +7,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auctions/{auction}', [AuctionController::class, 'show']);
     Route::post('/auctions/{auction}/initialize', [AuctionController::class, 'initialize']);
     Route::post('/auctions/{auction}/start', [AuctionController::class, 'start']);
+    Route::post('/auctions/{auction}/nominations', [AuctionController::class, 'startNomination']);
 });
