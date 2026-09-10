@@ -4,6 +4,7 @@ namespace App\Domain\Auction\Actions;
 
 use App\Domain\Auction\Enums\AuctionNominationCloseReason;
 use App\Domain\Auction\Enums\AuctionNominationStatus;
+use App\Events\Auction\AuctionNominationFinalized;
 use App\Models\Auction\AuctionNomination;
 use App\Models\Roster\RosterOwnership;
 use App\Models\User;
@@ -32,13 +33,17 @@ class FinalizeAuctionNomination
                 $actor
             );
 
-            if ($nomination->status !== AuctionNominationStatus::COMPLETED) {
-                return null;
+            $ownership = null;
+
+            if ($nomination->status === AuctionNominationStatus::COMPLETED) {
+                $ownership = $this->acquireAuctionPlayer->execute(
+                    $nomination
+                );
             }
 
-            return $this->acquireAuctionPlayer->execute(
-                $nomination
-            );
+            AuctionNominationFinalized::dispatch($nomination);
+
+            return $ownership;
         });
     }
 }

@@ -5,6 +5,7 @@ namespace Tests\Feature\Auction;
 use App\Domain\Auction\Actions\FinalizeAuctionNomination;
 use App\Domain\Auction\Enums\AuctionNominationCloseReason;
 use App\Domain\Auction\Enums\AuctionNominationStatus;
+use App\Events\Auction\AuctionNominationFinalized;
 use App\Models\Auction\Auction;
 use App\Models\Auction\AuctionBid;
 use App\Models\Auction\AuctionNomination;
@@ -14,12 +15,22 @@ use App\Models\League\LeagueMembership;
 use App\Models\Roster\LeagueSeasonRosterRule;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use RuntimeException;
 use Tests\TestCase;
 
 class FinalizeAuctionNominationTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Event::fake([
+            AuctionNominationFinalized::class,
+        ]);
+    }
 
     public function test_it_closes_expired_nomination_and_acquires_player_for_winner(): void
     {
@@ -407,5 +418,81 @@ class FinalizeAuctionNominationTest extends TestCase
                 ->league_season_id,
             'player_season_id' => $nomination->player_season_id,
         ]);
+
+        Event::assertNotDispatched(
+            AuctionNominationFinalized::class
+        );
+    }
+
+    public function test_it_dispatches_realtime_event_when_nomination_is_finalized(): void
+    {
+        $auction = Auction::factory()
+            ->live()
+            ->create();
+
+        $nomination = AuctionNomination::factory()->create([
+            'auction_id' => $auction->id,
+            'status' => AuctionNominationStatus::ACTIVE,
+            'close_reason' => null,
+            'closed_at' => null,
+            'expires_at' => now()->subSecond(),
+        ]);
+
+        app(FinalizeAuctionNomination::class)
+            ->execute(
+                $nomination,
+                AuctionNominationCloseReason::TIMER_EXPIRED
+            );
+
+        Event::assertDispatched(
+            AuctionNominationFinalized::class,
+            function (AuctionNominationFinalized $event) use ($nomination) {
+                return $event->nomination->is($nomination);
+            }
+        );
+    }
+
+    public function test_it_dispatches_realtime_event_when_nomination_is_rejected(): void
+    {
+        $auction = Auction::factory()
+            ->live()
+            ->create();
+
+        $nomination = AuctionNomination::factory()->create([
+            'auction_id' => $auction->id,
+            'status' => AuctionNominationStatus::ACTIVE,
+            'close_reason' => null,
+            'closed_at' => null,
+        ]);
+
+        $league = $auction
+            ->marketSession
+            ->leagueSeason
+            ->league;
+
+        $president = User::factory()->create();
+
+        LeagueMembership::factory()
+            ->president()
+            ->create([
+                'league_id' => $league->id,
+                'user_id' => $president->id,
+            ]);
+
+        app(FinalizeAuctionNomination::class)
+            ->execute(
+                $nomination,
+                AuctionNominationCloseReason::PRESIDENT_REJECTED,
+                $president
+            );
+
+        Event::assertDispatched(
+            AuctionNominationFinalized::class,
+            function (AuctionNominationFinalized $event) use ($nomination) {
+                return $event->nomination->is($nomination)
+                    && $event->nomination->status === AuctionNominationStatus::REJECTED
+                    && $event->nomination->close_reason === AuctionNominationCloseReason::PRESIDENT_REJECTED;
+            }
+        );
     }
 }
