@@ -66,4 +66,9 @@ class MarketSession extends Model
     {
         return $this->hasOne(Auction::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

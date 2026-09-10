@@ -54,4 +54,9 @@ class AuctionBid extends Model
             'auction_participant_id'
         );
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

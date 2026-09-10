@@ -71,4 +71,9 @@ class PlayerSeason extends Model
     {
         return $this->hasMany(AuctionNomination::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

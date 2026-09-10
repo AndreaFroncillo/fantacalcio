@@ -62,4 +62,9 @@ class RosterOwnership extends Model
     {
         return $this->hasOne(PlayerRelease::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

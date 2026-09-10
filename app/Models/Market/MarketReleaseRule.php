@@ -36,4 +36,9 @@ class MarketReleaseRule extends Model
     {
         return $this->belongsTo(MarketSession::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

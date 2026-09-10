@@ -40,4 +40,9 @@ class LeagueSeasonRosterRule extends Model
     {
         return $this->belongsTo(LeagueSeason::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

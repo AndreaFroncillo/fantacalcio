@@ -77,4 +77,9 @@ class LeagueSeason extends Model
     {
         return $this->hasMany(MarketSession::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

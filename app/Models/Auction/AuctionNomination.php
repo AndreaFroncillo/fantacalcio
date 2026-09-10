@@ -99,4 +99,9 @@ class AuctionNomination extends Model
         return $this->hasOne(AuctionBid::class)
             ->ofMany('sequence_number', 'max');
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

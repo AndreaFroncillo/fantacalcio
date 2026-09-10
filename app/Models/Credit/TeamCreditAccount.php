@@ -45,4 +45,9 @@ class TeamCreditAccount extends Model
     {
         return $this->hasMany(CreditTransaction::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

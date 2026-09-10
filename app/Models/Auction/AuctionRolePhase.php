@@ -57,4 +57,9 @@ class AuctionRolePhase extends Model
     {
         return $this->hasMany(AuctionNomination::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

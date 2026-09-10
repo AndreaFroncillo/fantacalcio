@@ -43,4 +43,9 @@ class League extends Model
     {
         return $this->hasMany(LeagueSeason::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

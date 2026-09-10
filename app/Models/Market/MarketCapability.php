@@ -45,4 +45,9 @@ class MarketCapability extends Model
     {
         return $this->hasMany(MarketCapabilityEvent::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

@@ -61,4 +61,9 @@ class PlayerRelease extends Model
     {
         return $this->belongsTo(PlayerSeason::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

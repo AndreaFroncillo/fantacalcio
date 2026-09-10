@@ -66,4 +66,9 @@ class User extends Authenticatable
             'invited_by_user_id'
         );
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

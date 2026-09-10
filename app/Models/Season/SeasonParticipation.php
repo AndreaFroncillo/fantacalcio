@@ -53,4 +53,9 @@ class SeasonParticipation extends Model
     {
         return $this->hasOne(Team::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

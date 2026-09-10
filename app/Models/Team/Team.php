@@ -67,4 +67,9 @@ class Team extends Model
     {
         return $this->hasMany(AuctionParticipant::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

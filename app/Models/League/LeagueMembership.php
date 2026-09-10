@@ -63,4 +63,9 @@ class LeagueMembership extends Model
     {
         return $this->hasMany(SeasonParticipation::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

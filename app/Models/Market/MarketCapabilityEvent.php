@@ -47,4 +47,9 @@ class MarketCapabilityEvent extends Model
     {
         return $this->belongsTo(User::class, 'performed_by_user_id');
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

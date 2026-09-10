@@ -70,4 +70,9 @@ class AuctionTurnSkip extends Model
             'performed_by_user_id'
         );
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

@@ -59,4 +59,9 @@ class AuctionParticipant extends Model
     {
         return $this->hasMany(AuctionBid::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

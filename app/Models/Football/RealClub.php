@@ -40,4 +40,9 @@ class RealClub extends Model
     {
         return $this->hasMany(PlayerSeason::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }

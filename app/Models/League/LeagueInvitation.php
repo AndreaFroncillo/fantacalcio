@@ -66,4 +66,9 @@ class LeagueInvitation extends Model
         return $this->status === LeagueInvitationStatus::PENDING
             && $this->expires_at->isPast();
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 }
