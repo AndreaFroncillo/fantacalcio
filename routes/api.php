@@ -5,4 +5,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auctions/{auction}', [AuctionController::class, 'show']);
+    Route::post('/auctions/{auction}/initialize', [AuctionController::class, 'initialize']);
+    Route::post('/auctions/{auction}/start', [AuctionController::class, 'start']);
 });

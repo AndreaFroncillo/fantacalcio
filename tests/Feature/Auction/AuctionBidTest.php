@@ -128,11 +128,22 @@ class AuctionBidTest extends TestCase
 
     public function test_same_sequence_number_can_exist_in_different_nominations(): void
     {
+        $firstNomination = AuctionNomination::factory()->create([
+            'turn_number' => 1,
+        ]);
+
+        $secondNomination = AuctionNomination::factory()->create([
+            'auction_id' => $firstNomination->auction_id,
+            'turn_number' => 2,
+        ]);
+
         $first = AuctionBid::factory()->create([
+            'auction_nomination_id' => $firstNomination->id,
             'sequence_number' => 2,
         ]);
 
         $second = AuctionBid::factory()->create([
+            'auction_nomination_id' => $secondNomination->id,
             'sequence_number' => 2,
         ]);
 
