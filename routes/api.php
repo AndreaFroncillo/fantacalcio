@@ -8,4 +8,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auctions/{auction}/initialize', [AuctionController::class, 'initialize']);
     Route::post('/auctions/{auction}/start', [AuctionController::class, 'start']);
     Route::post('/auctions/{auction}/nominations', [AuctionController::class, 'startNomination']);
+    Route::post('/auctions/{auction}/nominations/{nomination}/bids', [AuctionController::class, 'placeBid']);
 });

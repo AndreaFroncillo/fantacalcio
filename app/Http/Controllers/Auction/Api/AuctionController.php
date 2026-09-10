@@ -3,14 +3,18 @@
 namespace App\Http\Controllers\Auction\Api;
 
 use App\Domain\Auction\Actions\InitializeAuction;
+use App\Domain\Auction\Actions\PlaceAuctionBid;
 use App\Domain\Auction\Actions\StartAuction;
 use App\Domain\Auction\Actions\StartAuctionNomination;
 use App\Domain\Auction\Enums\AuctionNominationStatus;
 use App\Domain\Auction\Enums\AuctionRolePhaseStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auction\Api\PlaceAuctionBidRequest;
 use App\Http\Requests\Auction\Api\StartAuctionNominationRequest;
 use App\Http\Resources\Auction\Api\AuctionResource;
 use App\Models\Auction\Auction;
+use App\Models\Auction\AuctionNomination;
+use App\Models\Auction\AuctionParticipant;
 use App\Models\Football\PlayerSeason;
 use Illuminate\Support\Facades\Gate;
 use RuntimeException;
@@ -110,6 +114,51 @@ class AuctionController extends Controller
                         ->playerSeason
                         ->ulid,
                 ],
+            ],
+        ]);
+    }
+
+    public function placeBid(
+        PlaceAuctionBidRequest $request,
+        Auction $auction,
+        AuctionNomination $nomination,
+        PlaceAuctionBid $placeAuctionBid
+    ) {
+        Gate::authorize('bid', $auction);
+
+        if ($nomination->auction_id !== $auction->id) {
+            abort(404);
+        }
+
+        $participant = AuctionParticipant::query()
+            ->where('auction_id', $auction->id)
+            ->whereHas(
+                'team.seasonParticipation.leagueMembership',
+                function ($query) use ($request) {
+                    $query->where('user_id', $request->user()->id);
+                }
+            )
+            ->first();
+
+        if ($participant === null) {
+            abort(422, 'User is not an auction participant.');
+        }
+
+        try {
+            $bid = $placeAuctionBid->execute(
+                $nomination,
+                $participant,
+                $request->integer('amount')
+            );
+        } catch (RuntimeException $exception) {
+            abort(422, $exception->getMessage());
+        }
+
+        return response()->json([
+            'data' => [
+                'ulid' => $bid->ulid,
+                'amount' => $bid->amount,
+                'sequence_number' => $bid->sequence_number,
             ],
         ]);
     }
