@@ -21,7 +21,7 @@
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
-        <env name="BROADCAST_CONNECTION" value="reverb"/>
+        <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="REVERB_APP_ID" value="test-app-id"/>
         <env name="REVERB_APP_KEY" value="test-app-key"/>
         <env name="REVERB_APP_SECRET" value="test-app-secret"/>

@@ -5,6 +5,7 @@ namespace App\Domain\Auction\Actions;
 use App\Domain\Auction\Enums\AuctionNominationStatus;
 use App\Domain\Auction\Enums\AuctionRolePhaseStatus;
 use App\Domain\Auction\Enums\AuctionStatus;
+use App\Events\Auction\AuctionNominationStarted;
 use App\Models\Auction\Auction;
 use App\Models\Auction\AuctionNomination;
 use App\Models\Football\PlayerSeason;
@@ -117,7 +118,7 @@ class StartAuctionNomination
 
             $now = now();
 
-            return $auction->nominations()->create([
+            $nomination = $auction->nominations()->create([
                 'auction_role_phase_id' => $activePhase->id,
                 'auction_participant_id' => $turn['participant']->id,
                 'player_season_id' => $playerSeason->id,
@@ -132,6 +133,10 @@ class StartAuctionNomination
                 'closed_by_user_id' => null,
                 'close_reason' => null,
             ]);
+
+            AuctionNominationStarted::dispatch($nomination);
+
+            return $nomination;
         });
     }
 }

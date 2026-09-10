@@ -12,6 +12,7 @@ use App\Domain\Auction\Enums\AuctionTurnSkipReason;
 use App\Domain\Football\Enums\PlayerRole;
 use App\Domain\Market\Enums\MarketCapabilityType;
 use App\Domain\Market\Enums\MarketSessionStatus;
+use App\Events\Auction\AuctionNominationStarted;
 use App\Models\Auction\Auction;
 use App\Models\Credit\TeamCreditAccount;
 use App\Models\Football\FootballSeason;
@@ -23,12 +24,22 @@ use App\Models\Season\SeasonParticipation;
 use App\Models\Team\Team;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use RuntimeException;
 use Tests\TestCase;
 
 class StartAuctionNominationTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Event::fake([
+            AuctionNominationStarted::class,
+        ]);
+    }
 
     public function test_it_starts_a_nomination_for_the_next_eligible_participant(): void
     {
@@ -78,6 +89,31 @@ class StartAuctionNominationTest extends TestCase
             $nomination->timer_started_at->diffInSeconds(
                 $nomination->expires_at
             )
+        );
+    }
+
+    public function test_it_dispatches_realtime_event_when_nomination_starts(): void
+    {
+        $auction = $this->createStartedAuction();
+
+        $footballSeason = $this->createFootballSeasonForAuction($auction);
+
+        $playerSeason = PlayerSeason::factory()->create([
+            'football_season_id' => $footballSeason->id,
+            'role' => PlayerRole::GOALKEEPER,
+        ]);
+
+        $nomination = app(StartAuctionNomination::class)->execute(
+            $auction,
+            $playerSeason,
+            $this->currentParticipantUser($auction)
+        );
+
+        Event::assertDispatched(
+            AuctionNominationStarted::class,
+            function (AuctionNominationStarted $event) use ($nomination) {
+                return $event->nomination->is($nomination);
+            }
         );
     }
 

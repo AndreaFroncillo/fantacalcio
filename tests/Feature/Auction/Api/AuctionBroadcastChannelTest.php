@@ -5,12 +5,24 @@ namespace Tests\Feature\Auction\Api;
 use App\Models\Auction\Auction;
 use App\Models\League\LeagueMembership;
 use App\Models\User;
+use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class AuctionBroadcastChannelTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config()->set('broadcasting.default', 'reverb');
+
+        app(BroadcastManager::class)->forgetDrivers();
+
+        require base_path('routes/channels.php');
+    }
 
     public function test_active_league_member_can_authorize_auction_channel(): void
     {
