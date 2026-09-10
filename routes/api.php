@@ -11,4 +11,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auctions/{auction}/nominations/{nomination}/bids', [AuctionController::class, 'placeBid']);
     Route::post('/auctions/{auction}/nominations/{nomination}/confirm', [AuctionController::class, 'confirmNomination']);
     Route::post('/auctions/{auction}/nominations/{nomination}/reject', [AuctionController::class, 'rejectNomination']);
+    Route::post('/auctions/{auction}/nominations/{nomination}/expire', [AuctionController::class, 'expireNomination']);
 });

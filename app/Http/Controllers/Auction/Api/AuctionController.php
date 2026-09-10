@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auction\Api;
 
+use App\Domain\Auction\Actions\ExpireAuctionNomination;
 use App\Domain\Auction\Actions\FinalizeAndProgressAuction;
 use App\Domain\Auction\Actions\InitializeAuction;
 use App\Domain\Auction\Actions\PlaceAuctionBid;
@@ -215,6 +216,35 @@ class AuctionController extends Controller
                 AuctionNominationCloseReason::PRESIDENT_REJECTED,
                 request()->user()
             );
+        } catch (RuntimeException $exception) {
+            abort(422, $exception->getMessage());
+        }
+
+        $nomination->refresh();
+
+        return response()->json([
+            'data' => [
+                'ulid' => $nomination->ulid,
+                'status' => $nomination->status->value,
+                'close_reason' => $nomination->close_reason?->value,
+                'closed_at' => $nomination->closed_at?->toISOString(),
+            ],
+        ]);
+    }
+
+    public function expireNomination(
+        Auction $auction,
+        AuctionNomination $nomination,
+        ExpireAuctionNomination $expireAuctionNomination
+    ) {
+        Gate::authorize('expire', $auction);
+
+        if ($nomination->auction_id !== $auction->id) {
+            abort(404);
+        }
+
+        try {
+            $expireAuctionNomination->execute($nomination);
         } catch (RuntimeException $exception) {
             abort(422, $exception->getMessage());
         }
