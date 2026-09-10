@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Auction\Api;
 
+use App\Domain\Auction\Actions\FinalizeAndProgressAuction;
 use App\Domain\Auction\Actions\InitializeAuction;
 use App\Domain\Auction\Actions\PlaceAuctionBid;
 use App\Domain\Auction\Actions\StartAuction;
 use App\Domain\Auction\Actions\StartAuctionNomination;
+use App\Domain\Auction\Enums\AuctionNominationCloseReason;
 use App\Domain\Auction\Enums\AuctionNominationStatus;
 use App\Domain\Auction\Enums\AuctionRolePhaseStatus;
 use App\Http\Controllers\Controller;
@@ -26,11 +28,11 @@ class AuctionController extends Controller
         Gate::authorize('view', $auction);
 
         $auction->load([
-            'rolePhases' => fn ($query) => $query
+            'rolePhases' => fn($query) => $query
                 ->where('status', AuctionRolePhaseStatus::ACTIVE)
                 ->orderBy('position'),
 
-            'nominations' => fn ($query) => $query
+            'nominations' => fn($query) => $query
                 ->where('status', AuctionNominationStatus::ACTIVE)
                 ->with([
                     'playerSeason.footballPlayer',
@@ -40,7 +42,7 @@ class AuctionController extends Controller
                 ])
                 ->orderByDesc('id'),
 
-            'participants' => fn ($query) => $query
+            'participants' => fn($query) => $query
                 ->with('team.creditAccount')
                 ->orderBy('nomination_position'),
         ]);
@@ -159,6 +161,39 @@ class AuctionController extends Controller
                 'ulid' => $bid->ulid,
                 'amount' => $bid->amount,
                 'sequence_number' => $bid->sequence_number,
+            ],
+        ]);
+    }
+
+    public function confirmNomination(
+        Auction $auction,
+        AuctionNomination $nomination,
+        FinalizeAndProgressAuction $finalizeAndProgressAuction
+    ) {
+        Gate::authorize('confirm', $auction);
+
+        if ($nomination->auction_id !== $auction->id) {
+            abort(404);
+        }
+
+        try {
+            $finalizeAndProgressAuction->execute(
+                $nomination,
+                AuctionNominationCloseReason::PRESIDENT_CONFIRMED,
+                request()->user()
+            );
+        } catch (RuntimeException $exception) {
+            abort(422, $exception->getMessage());
+        }
+
+        $nomination->refresh();
+
+        return response()->json([
+            'data' => [
+                'ulid' => $nomination->ulid,
+                'status' => $nomination->status->value,
+                'close_reason' => $nomination->close_reason?->value,
+                'closed_at' => $nomination->closed_at?->toISOString(),
             ],
         ]);
     }

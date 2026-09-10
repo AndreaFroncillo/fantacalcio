@@ -81,4 +81,19 @@ class AuctionPolicy
             ->where('status', LeagueMembershipStatus::ACTIVE)
             ->exists();
     }
+
+    public function confirm(User $user, Auction $auction): bool
+    {
+        $leagueId = $auction
+            ->marketSession
+            ->leagueSeason
+            ->league_id;
+
+        return LeagueMembership::query()
+            ->where('league_id', $leagueId)
+            ->where('user_id', $user->id)
+            ->where('role', LeagueMembershipRole::PRESIDENT)
+            ->where('status', LeagueMembershipStatus::ACTIVE)
+            ->exists();
+    }
 }
