@@ -11,6 +11,7 @@ use App\Domain\Auction\Enums\AuctionStatus;
 use App\Domain\Football\Enums\PlayerRole;
 use App\Domain\Market\Enums\MarketCapabilityType;
 use App\Domain\Market\Enums\MarketSessionStatus;
+use App\Events\Auction\AuctionBidPlaced;
 use App\Models\Auction\Auction;
 use App\Models\Auction\AuctionNomination;
 use App\Models\Auction\AuctionParticipant;
@@ -24,12 +25,22 @@ use App\Models\Team\Team;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use RuntimeException;
 use Tests\TestCase;
 
 class PlaceAuctionBidTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Event::fake([
+            AuctionBidPlaced::class,
+        ]);
+    }
 
     public function test_it_places_the_first_bid_on_an_active_nomination(): void
     {
@@ -837,6 +848,49 @@ class PlaceAuctionBidTest extends TestCase
             $nomination,
             $participant,
             1
+        );
+    }
+
+    public function test_it_dispatches_realtime_event_when_bid_is_placed(): void
+    {
+        $auction = $this->createStartedAuction();
+
+        $leagueSeason = $auction->marketSession->leagueSeason;
+
+        $footballSeason = FootballSeason::factory()->create([
+            'start_year' => $leagueSeason->start_year,
+            'end_year' => $leagueSeason->end_year,
+            'name' => sprintf(
+                'Serie A %d/%d',
+                $leagueSeason->start_year,
+                $leagueSeason->end_year
+            ),
+        ]);
+
+        $playerSeason = PlayerSeason::factory()->create([
+            'football_season_id' => $footballSeason->id,
+            'role' => PlayerRole::GOALKEEPER,
+        ]);
+
+        $nomination = app(StartAuctionNomination::class)->execute(
+            $auction,
+            $playerSeason,
+            $this->currentParticipantUser($auction)
+        );
+
+        $participant = $auction->participants()->firstOrFail();
+
+        $bid = app(PlaceAuctionBid::class)->execute(
+            $nomination,
+            $participant,
+            10
+        );
+
+        Event::assertDispatched(
+            AuctionBidPlaced::class,
+            function (AuctionBidPlaced $event) use ($bid) {
+                return $event->bid->is($bid);
+            }
         );
     }
 

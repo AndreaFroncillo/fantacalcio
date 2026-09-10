@@ -4,6 +4,7 @@ namespace App\Domain\Auction\Actions;
 
 use App\Domain\Auction\Enums\AuctionNominationStatus;
 use App\Domain\Auction\Enums\AuctionStatus;
+use App\Events\Auction\AuctionBidPlaced;
 use App\Models\Auction\AuctionBid;
 use App\Models\Auction\AuctionNomination;
 use App\Models\Auction\AuctionParticipant;
@@ -123,12 +124,16 @@ class PlaceAuctionBid
                 'expires_at' => $now->copy()->addSeconds($newRemainingSeconds),
             ]);
 
-            return $nomination->bids()->create([
+            $bid = $nomination->bids()->create([
                 'auction_participant_id' => $participant->id,
                 'amount' => $amount,
                 'sequence_number' => $sequenceNumber,
                 'placed_at' => now(),
             ]);
+
+            AuctionBidPlaced::dispatch($bid);
+
+            return $bid;
         });
     }
 }
