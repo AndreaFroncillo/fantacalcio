@@ -8,6 +8,7 @@ use App\Domain\Auction\Enums\AuctionRolePhaseStatus;
 use App\Domain\Auction\Enums\AuctionStatus;
 use App\Domain\Auction\Enums\AuctionTurnSkipReason;
 use App\Domain\Football\Enums\PlayerRole;
+use App\Events\Auction\AuctionRolePhaseAdvanced;
 use App\Models\Auction\Auction;
 use App\Models\Auction\AuctionNomination;
 use App\Models\Auction\AuctionParticipant;
@@ -15,12 +16,22 @@ use App\Models\Auction\AuctionRolePhase;
 use App\Models\Credit\TeamCreditAccount;
 use App\Models\Roster\LeagueSeasonRosterRule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use RuntimeException;
 use Tests\TestCase;
 
 class AdvanceAuctionRolePhaseTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Event::fake([
+            AuctionRolePhaseAdvanced::class,
+        ]);
+    }
 
     public function test_it_advances_to_next_role_phase_when_current_role_has_no_eligible_participants(): void
     {
@@ -624,6 +635,102 @@ class AdvanceAuctionRolePhaseTest extends TestCase
         $this->assertSame(
             AuctionRolePhaseStatus::COMPLETED,
             $goalkeeperPhase->fresh()->status
+        );
+    }
+
+    public function test_it_dispatches_realtime_event_when_role_phase_advances(): void
+    {
+        $auction = Auction::factory()
+            ->live()
+            ->create();
+
+        $goalkeeperPhase = AuctionRolePhase::factory()
+            ->active()
+            ->create([
+                'auction_id' => $auction->id,
+                'role' => PlayerRole::GOALKEEPER,
+                'position' => 1,
+            ]);
+
+        $defenderPhase = AuctionRolePhase::factory()->create([
+            'auction_id' => $auction->id,
+            'role' => PlayerRole::DEFENDER,
+            'position' => 2,
+            'status' => AuctionRolePhaseStatus::PENDING,
+        ]);
+
+        $participant = AuctionParticipant::factory()->create([
+            'auction_id' => $auction->id,
+            'nomination_position' => 1,
+        ]);
+
+        TeamCreditAccount::factory()->create([
+            'team_id' => $participant->team_id,
+            'current_balance' => 0,
+        ]);
+
+        LeagueSeasonRosterRule::factory()->create([
+            'league_season_id' => $auction
+                ->marketSession
+                ->league_season_id,
+            'role' => PlayerRole::GOALKEEPER,
+            'max_players' => 3,
+        ]);
+
+        app(AdvanceAuctionRolePhase::class)
+            ->execute($auction);
+
+        Event::assertDispatched(
+            AuctionRolePhaseAdvanced::class,
+            function (AuctionRolePhaseAdvanced $event) use (
+                $goalkeeperPhase,
+                $defenderPhase
+            ) {
+                return $event->previousPhase->is($goalkeeperPhase)
+                    && $event->nextPhase->is($defenderPhase);
+            }
+        );
+    }
+
+    public function test_it_does_not_dispatch_realtime_event_when_last_role_phase_completes(): void
+    {
+        $auction = Auction::factory()
+            ->live()
+            ->create();
+
+        AuctionRolePhase::factory()
+            ->active()
+            ->create([
+                'auction_id' => $auction->id,
+                'role' => PlayerRole::FORWARD,
+                'position' => 4,
+            ]);
+
+        $participant = AuctionParticipant::factory()->create([
+            'auction_id' => $auction->id,
+            'nomination_position' => 1,
+        ]);
+
+        TeamCreditAccount::factory()->create([
+            'team_id' => $participant->team_id,
+            'current_balance' => 0,
+        ]);
+
+        LeagueSeasonRosterRule::factory()->create([
+            'league_season_id' => $auction
+                ->marketSession
+                ->league_season_id,
+            'role' => PlayerRole::FORWARD,
+            'max_players' => 6,
+        ]);
+
+        $result = app(AdvanceAuctionRolePhase::class)
+            ->execute($auction);
+
+        $this->assertNull($result);
+
+        Event::assertNotDispatched(
+            AuctionRolePhaseAdvanced::class
         );
     }
 }

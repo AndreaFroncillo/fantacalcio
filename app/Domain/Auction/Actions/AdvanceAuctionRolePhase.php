@@ -5,6 +5,7 @@ namespace App\Domain\Auction\Actions;
 use App\Domain\Auction\Enums\AuctionNominationStatus;
 use App\Domain\Auction\Enums\AuctionRolePhaseStatus;
 use App\Domain\Auction\Enums\AuctionStatus;
+use App\Events\Auction\AuctionRolePhaseAdvanced;
 use App\Models\Auction\Auction;
 use App\Models\Auction\AuctionRolePhase;
 use Illuminate\Support\Facades\DB;
@@ -91,9 +92,16 @@ class AdvanceAuctionRolePhase
                 'completed_at' => null,
             ]);
 
+            $nextPhase = $nextPhase->refresh();
+
+            AuctionRolePhaseAdvanced::dispatch(
+                $activePhase,
+                $nextPhase
+            );
+
             return [
                 'has_eligible_participant' => false,
-                'next_phase' => $nextPhase->refresh(),
+                'next_phase' => $nextPhase,
             ];
         });
 
