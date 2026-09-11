@@ -84,6 +84,13 @@ export default class AuctionClient {
             }
         );
 
+        channel.listen(
+            '.auction.completed',
+            async () => {
+                await this.loadSnapshot();
+            }
+        );
+
         return channel;
     }
 

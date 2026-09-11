@@ -550,3 +550,67 @@ test('it reloads the snapshot when auction role phase advanced is received', asy
         global.fetch = originalFetch;
     }
 });
+
+test('it reloads the snapshot when auction completed is received', async () => {
+    const originalFetch = global.fetch;
+
+    const listeners = {};
+
+    const channel = {
+        listen(eventName, callback) {
+            listeners[eventName] = callback;
+
+            return this;
+        },
+    };
+
+    const echo = {
+        private() {
+            return channel;
+        },
+    };
+
+    const snapshot = {
+        ulid: '01TESTAUCTIONULID',
+        status: 'completed',
+        active_role_phase: null,
+        active_nomination: null,
+        participants: [],
+    };
+
+    global.fetch = async () => ({
+        ok: true,
+        async json() {
+            return {
+                data: snapshot,
+            };
+        },
+    });
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID',
+            echo
+        );
+
+        client.subscribe();
+
+        assert.equal(
+            typeof listeners['.auction.completed'],
+            'function'
+        );
+
+        await listeners['.auction.completed']({
+            auction_ulid: '01TESTAUCTIONULID',
+            status: 'completed',
+            completed_at: '2026-09-11T10:10:00.000000Z',
+        });
+
+        assert.deepEqual(
+            client.getState(),
+            snapshot
+        );
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
