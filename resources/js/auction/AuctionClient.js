@@ -7,6 +7,7 @@ export default class AuctionClient {
         this.auctionUlid = auctionUlid;
         this.echo = echo;
         this.state = null;
+        this.nominationRemainingMilliseconds = 0;
     }
 
     async loadSnapshot() {
@@ -139,6 +140,13 @@ export default class AuctionClient {
             0,
             new Date(expiresAt).getTime() - now
         );
+    }
+
+    updateNominationCountdown(now = Date.now()) {
+        this.nominationRemainingMilliseconds =
+            this.getRemainingNominationMilliseconds(now);
+
+        return this.nominationRemainingMilliseconds;
     }
 
     getState() {

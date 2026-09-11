@@ -18,6 +18,17 @@ test('initial state is null', () => {
     assert.equal(client.getState(), null);
 });
 
+test('initial nomination countdown is zero', () => {
+    const client = new AuctionClient(
+        '01TESTAUCTIONULID'
+    );
+
+    assert.equal(
+        client.nominationRemainingMilliseconds,
+        0
+    );
+});
+
 test('it loads and stores auction snapshot', async () => {
     const originalFetch = global.fetch;
 
@@ -928,5 +939,37 @@ test('it returns zero remaining time when nomination is expired', () => {
     assert.equal(
         client.getRemainingNominationMilliseconds(now),
         0
+    );
+});
+
+test('it updates nomination countdown locally', () => {
+    const client = new AuctionClient(
+        '01TESTAUCTIONULID'
+    );
+
+    client.state = {
+        ulid: '01TESTAUCTIONULID',
+        status: 'live',
+        active_nomination: {
+            ulid: '01TESTNOMINATIONULID',
+            expires_at: '2026-09-11T20:00:10.000Z',
+        },
+    };
+
+    const now = new Date(
+        '2026-09-11T20:00:04.000Z'
+    ).getTime();
+
+    const remainingMilliseconds =
+        client.updateNominationCountdown(now);
+
+    assert.equal(
+        remainingMilliseconds,
+        6000
+    );
+
+    assert.equal(
+        client.nominationRemainingMilliseconds,
+        6000
     );
 });
