@@ -158,13 +158,11 @@ test('it subscribes to the auction private channel', () => {
 test('it reloads the snapshot when auction started is received', async () => {
     const originalFetch = global.fetch;
 
-    let listenedEvent = null;
-    let eventHandler = null;
+    const listeners = {};
 
     const channel = {
         listen(eventName, callback) {
-            listenedEvent = eventName;
-            eventHandler = callback;
+            listeners[eventName] = callback;
 
             return this;
         },
@@ -207,21 +205,104 @@ test('it reloads the snapshot when auction started is received', async () => {
         client.subscribe();
 
         assert.equal(
-            listenedEvent,
-            '.auction.started'
-        );
-
-        assert.equal(
-            typeof eventHandler,
+            typeof listeners['.auction.started'],
             'function'
         );
 
-        await eventHandler({
+        await listeners['.auction.started']({
             auction_ulid: '01TESTAUCTIONULID',
             status: 'live',
             started_at: '2026-09-11T07:00:00.000000Z',
             active_role_phase_ulid: '01TESTPHASEULID',
             active_role: 'P',
+        });
+
+        assert.deepEqual(
+            client.getState(),
+            snapshot
+        );
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
+
+test('it reloads the snapshot when auction nomination started is received', async () => {
+    const originalFetch = global.fetch;
+
+    const listeners = {};
+
+    const channel = {
+        listen(eventName, callback) {
+            listeners[eventName] = callback;
+
+            return this;
+        },
+    };
+
+    const echo = {
+        private() {
+            return channel;
+        },
+    };
+
+    const snapshot = {
+        ulid: '01TESTAUCTIONULID',
+        status: 'live',
+        active_role_phase: {
+            ulid: '01TESTPHASEULID',
+            role: 'P',
+            position: 1,
+            status: 'active',
+        },
+        active_nomination: {
+            ulid: '01TESTNOMINATIONULID',
+            player_season_ulid: '01TESTPLAYERSEASONULID',
+            turn_number: 1,
+            opening_price: 1,
+            status: 'active',
+            timer_started_at: '2026-09-11T10:00:00.000000Z',
+            expires_at: '2026-09-11T10:01:00.000000Z',
+            player: {},
+            nominator: {
+                ulid: '01TESTPARTICIPANTULID',
+                nomination_position: 1,
+            },
+            current_bid: null,
+        },
+        participants: [],
+    };
+
+    global.fetch = async () => ({
+        ok: true,
+        async json() {
+            return {
+                data: snapshot,
+            };
+        },
+    });
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID',
+            echo
+        );
+
+        client.subscribe();
+
+        assert.equal(
+            typeof listeners['.auction.nomination.started'],
+            'function'
+        );
+
+        await listeners['.auction.nomination.started']({
+            auction_ulid: '01TESTAUCTIONULID',
+            nomination_ulid: '01TESTNOMINATIONULID',
+            player_season_ulid: '01TESTPLAYERSEASONULID',
+            auction_participant_ulid: '01TESTPARTICIPANTULID',
+            turn_number: 1,
+            opening_price: 1,
+            timer_started_at: '2026-09-11T10:00:00.000000Z',
+            expires_at: '2026-09-11T10:01:00.000000Z',
         });
 
         assert.deepEqual(
