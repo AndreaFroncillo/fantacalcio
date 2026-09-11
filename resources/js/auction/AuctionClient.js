@@ -127,6 +127,20 @@ export default class AuctionClient {
         return channel;
     }
 
+    getRemainingNominationMilliseconds(now = Date.now()) {
+        const expiresAt =
+            this.state?.active_nomination?.expires_at;
+
+        if (!expiresAt) {
+            return 0;
+        }
+
+        return Math.max(
+            0,
+            new Date(expiresAt).getTime() - now
+        );
+    }
+
     getState() {
         return this.state;
     }

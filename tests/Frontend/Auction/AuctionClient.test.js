@@ -858,3 +858,75 @@ test('it handles realtime resync failure without unhandled rejection', async () 
         global.fetch = originalFetch;
     }
 });
+
+test('it calculates remaining nomination time from expires_at', () => {
+    const client = new AuctionClient(
+        '01TESTAUCTIONULID'
+    );
+
+    client.state = {
+        ulid: '01TESTAUCTIONULID',
+        status: 'live',
+        active_nomination: {
+            ulid: '01TESTNOMINATIONULID',
+            expires_at: '2026-09-11T20:00:10.000Z',
+        },
+    };
+
+    const now = new Date(
+        '2026-09-11T20:00:00.000Z'
+    ).getTime();
+
+    const remainingMilliseconds =
+        client.getRemainingNominationMilliseconds(now);
+
+    assert.equal(
+        remainingMilliseconds,
+        10000
+    );
+});
+
+test('it returns zero remaining time without an active nomination expiry', () => {
+    const client = new AuctionClient(
+        '01TESTAUCTIONULID'
+    );
+
+    client.state = {
+        ulid: '01TESTAUCTIONULID',
+        status: 'live',
+        active_nomination: null,
+    };
+
+    const now = new Date(
+        '2026-09-11T20:00:00.000Z'
+    ).getTime();
+
+    assert.equal(
+        client.getRemainingNominationMilliseconds(now),
+        0
+    );
+});
+
+test('it returns zero remaining time when nomination is expired', () => {
+    const client = new AuctionClient(
+        '01TESTAUCTIONULID'
+    );
+
+    client.state = {
+        ulid: '01TESTAUCTIONULID',
+        status: 'live',
+        active_nomination: {
+            ulid: '01TESTNOMINATIONULID',
+            expires_at: '2026-09-11T19:59:50.000Z',
+        },
+    };
+
+    const now = new Date(
+        '2026-09-11T20:00:00.000Z'
+    ).getTime();
+
+    assert.equal(
+        client.getRemainingNominationMilliseconds(now),
+        0
+    );
+});
