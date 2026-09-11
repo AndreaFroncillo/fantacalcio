@@ -614,3 +614,37 @@ test('it reloads the snapshot when auction completed is received', async () => {
         global.fetch = originalFetch;
     }
 });
+
+test('it resyncs the auction snapshot', async () => {
+    const originalFetch = global.fetch;
+
+    const snapshot = {
+        ulid: '01TESTAUCTIONULID',
+        status: 'live',
+        active_role_phase: null,
+        active_nomination: null,
+        participants: [],
+    };
+
+    global.fetch = async () => ({
+        ok: true,
+        async json() {
+            return {
+                data: snapshot,
+            };
+        },
+    });
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID'
+        );
+
+        const result = await client.resync();
+
+        assert.deepEqual(result, snapshot);
+        assert.deepEqual(client.getState(), snapshot);
+    } finally {
+        global.fetch = originalFetch;
+    }
+});

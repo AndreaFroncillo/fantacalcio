@@ -40,6 +40,10 @@ export default class AuctionClient {
         return this.state;
     }
 
+    async resync() {
+        return this.loadSnapshot();
+    }
+
     subscribe() {
         if (!this.echo) {
             throw new Error('Echo instance is required.');
