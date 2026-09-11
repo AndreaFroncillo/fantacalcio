@@ -77,6 +77,13 @@ export default class AuctionClient {
             }
         );
 
+        channel.listen(
+            '.auction.role-phase.advanced',
+            async () => {
+                await this.loadSnapshot();
+            }
+        );
+
         return channel;
     }
 

@@ -478,3 +478,75 @@ test('it reloads the snapshot when auction nomination finalized is received', as
         global.fetch = originalFetch;
     }
 });
+
+test('it reloads the snapshot when auction role phase advanced is received', async () => {
+    const originalFetch = global.fetch;
+
+    const listeners = {};
+
+    const channel = {
+        listen(eventName, callback) {
+            listeners[eventName] = callback;
+
+            return this;
+        },
+    };
+
+    const echo = {
+        private() {
+            return channel;
+        },
+    };
+
+    const snapshot = {
+        ulid: '01TESTAUCTIONULID',
+        status: 'live',
+        active_role_phase: {
+            ulid: '01TESTNEXTPHASEULID',
+            role: 'D',
+            position: 2,
+            status: 'active',
+        },
+        active_nomination: null,
+        participants: [],
+    };
+
+    global.fetch = async () => ({
+        ok: true,
+        async json() {
+            return {
+                data: snapshot,
+            };
+        },
+    });
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID',
+            echo
+        );
+
+        client.subscribe();
+
+        assert.equal(
+            typeof listeners['.auction.role-phase.advanced'],
+            'function'
+        );
+
+        await listeners['.auction.role-phase.advanced']({
+            auction_ulid: '01TESTAUCTIONULID',
+            previous_phase_ulid: '01TESTPREVIOUSPHASEULID',
+            previous_role: 'P',
+            next_phase_ulid: '01TESTNEXTPHASEULID',
+            next_role: 'D',
+            started_at: '2026-09-11T10:05:00.000000Z',
+        });
+
+        assert.deepEqual(
+            client.getState(),
+            snapshot
+        );
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
