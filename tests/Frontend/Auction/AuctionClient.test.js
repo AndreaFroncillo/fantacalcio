@@ -407,3 +407,74 @@ test('it reloads the snapshot when auction bid placed is received', async () => 
         global.fetch = originalFetch;
     }
 });
+
+test('it reloads the snapshot when auction nomination finalized is received', async () => {
+    const originalFetch = global.fetch;
+
+    const listeners = {};
+
+    const channel = {
+        listen(eventName, callback) {
+            listeners[eventName] = callback;
+
+            return this;
+        },
+    };
+
+    const echo = {
+        private() {
+            return channel;
+        },
+    };
+
+    const snapshot = {
+        ulid: '01TESTAUCTIONULID',
+        status: 'live',
+        active_role_phase: {
+            ulid: '01TESTPHASEULID',
+            role: 'P',
+            position: 1,
+            status: 'active',
+        },
+        active_nomination: null,
+        participants: [],
+    };
+
+    global.fetch = async () => ({
+        ok: true,
+        async json() {
+            return {
+                data: snapshot,
+            };
+        },
+    });
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID',
+            echo
+        );
+
+        client.subscribe();
+
+        assert.equal(
+            typeof listeners['.auction.nomination.finalized'],
+            'function'
+        );
+
+        await listeners['.auction.nomination.finalized']({
+            auction_ulid: '01TESTAUCTIONULID',
+            nomination_ulid: '01TESTNOMINATIONULID',
+            status: 'completed',
+            close_reason: 'won',
+            closed_at: '2026-09-11T10:02:00.000000Z',
+        });
+
+        assert.deepEqual(
+            client.getState(),
+            snapshot
+        );
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
