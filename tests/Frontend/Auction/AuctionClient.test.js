@@ -796,3 +796,65 @@ test('it resyncs the auction when realtime connection reconnects', async () => {
         global.fetch = originalFetch;
     }
 });
+
+test('it handles realtime resync failure without unhandled rejection', async () => {
+    const originalFetch = global.fetch;
+
+    const connectionListeners = {};
+
+    const channel = {
+        listen() {
+            return this;
+        },
+    };
+
+    const echo = {
+        private() {
+            return channel;
+        },
+        connector: {
+            pusher: {
+                connection: {
+                    bind(eventName, callback) {
+                        connectionListeners[eventName] = callback;
+                    },
+                },
+            },
+        },
+    };
+
+    global.fetch = async () => ({
+        ok: false,
+        status: 500,
+    });
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID',
+            echo
+        );
+
+        client.subscribe();
+
+        await connectionListeners.state_change({
+            previous: 'connected',
+            current: 'unavailable',
+        });
+
+        await assert.doesNotReject(
+            async () => {
+                await connectionListeners.state_change({
+                    previous: 'connecting',
+                    current: 'connected',
+                });
+            }
+        );
+
+        assert.equal(
+            client.getState(),
+            null
+        );
+    } finally {
+        global.fetch = originalFetch;
+    }
+});

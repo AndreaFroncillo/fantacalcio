@@ -73,7 +73,11 @@ export default class AuctionClient {
                 ) {
                     shouldResyncOnConnect = false;
 
-                    await this.resync();
+                    try {
+                        await this.resync();
+                    } catch {
+                        return;
+                    }
                 }
             }
         );
