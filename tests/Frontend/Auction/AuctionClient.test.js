@@ -1175,3 +1175,65 @@ test('it does not start a duplicate nomination countdown ticker', () => {
         global.setInterval = originalSetInterval;
     }
 });
+
+test('it stops the nomination countdown ticker when countdown expires', () => {
+    const originalSetInterval = global.setInterval;
+    const originalClearInterval = global.clearInterval;
+    const originalDateNow = Date.now;
+
+    let intervalCallback = null;
+    let clearedIntervalId = null;
+
+    global.setInterval = (callback) => {
+        intervalCallback = callback;
+
+        return 123;
+    };
+
+    global.clearInterval = (intervalId) => {
+        clearedIntervalId = intervalId;
+    };
+
+    Date.now = () =>
+        new Date(
+            '2026-09-11T20:00:10.000Z'
+        ).getTime();
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID'
+        );
+
+        client.state = {
+            ulid: '01TESTAUCTIONULID',
+            status: 'live',
+            active_nomination: {
+                ulid: '01TESTNOMINATIONULID',
+                expires_at: '2026-09-11T20:00:10.000Z',
+            },
+        };
+
+        client.startNominationCountdown();
+
+        intervalCallback();
+
+        assert.equal(
+            client.nominationRemainingMilliseconds,
+            0
+        );
+
+        assert.equal(
+            clearedIntervalId,
+            123
+        );
+
+        assert.equal(
+            client.nominationCountdownIntervalId,
+            null
+        );
+    } finally {
+        global.setInterval = originalSetInterval;
+        global.clearInterval = originalClearInterval;
+        Date.now = originalDateNow;
+    }
+});

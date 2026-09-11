@@ -157,7 +157,12 @@ export default class AuctionClient {
 
         this.nominationCountdownIntervalId = setInterval(
             () => {
-                this.updateNominationCountdown();
+                const remainingMilliseconds =
+                    this.updateNominationCountdown();
+
+                if (remainingMilliseconds === 0) {
+                    this.stopNominationCountdown();
+                }
             },
             1000
         );
