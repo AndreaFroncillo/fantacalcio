@@ -41,6 +41,10 @@ export default class AuctionClient {
 
         this.updateNominationCountdown();
 
+        if (this.nominationRemainingMilliseconds > 0) {
+            this.startNominationCountdown();
+        }
+
         return this.state;
     }
 

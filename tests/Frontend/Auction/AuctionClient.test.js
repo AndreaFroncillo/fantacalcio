@@ -1285,3 +1285,71 @@ test('it realigns nomination countdown when snapshot is loaded', async () => {
         Date.now = originalDateNow;
     }
 });
+
+test('it restarts nomination countdown ticker after loading a new active nomination', async () => {
+    const originalFetch = global.fetch;
+    const originalSetInterval = global.setInterval;
+    const originalDateNow = Date.now;
+
+    let setIntervalCalls = 0;
+
+    global.setInterval = () => {
+        setIntervalCalls++;
+
+        return 123;
+    };
+
+    Date.now = () =>
+        new Date(
+            '2026-09-11T20:00:04.000Z'
+        ).getTime();
+
+    global.fetch = async () => ({
+        ok: true,
+        async json() {
+            return {
+                data: {
+                    ulid: '01TESTAUCTIONULID',
+                    status: 'live',
+                    active_nomination: {
+                        ulid: '01TESTNEWNOMINATIONULID',
+                        expires_at:
+                            '2026-09-11T20:00:10.000Z',
+                    },
+                },
+            };
+        },
+    });
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID'
+        );
+
+        assert.equal(
+            client.nominationCountdownIntervalId,
+            null
+        );
+
+        await client.loadSnapshot();
+
+        assert.equal(
+            client.nominationRemainingMilliseconds,
+            6000
+        );
+
+        assert.equal(
+            setIntervalCalls,
+            1
+        );
+
+        assert.equal(
+            client.nominationCountdownIntervalId,
+            123
+        );
+    } finally {
+        global.fetch = originalFetch;
+        global.setInterval = originalSetInterval;
+        Date.now = originalDateNow;
+    }
+});
