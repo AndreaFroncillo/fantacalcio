@@ -43,6 +43,8 @@ export default class AuctionClient {
 
         if (this.nominationRemainingMilliseconds > 0) {
             this.startNominationCountdown();
+        } else if (this.nominationCountdownIntervalId !== null) {
+            this.stopNominationCountdown();
         }
 
         return this.state;
