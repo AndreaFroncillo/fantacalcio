@@ -973,3 +973,159 @@ test('it updates nomination countdown locally', () => {
         6000
     );
 });
+
+test('it starts the nomination countdown ticker', () => {
+    const originalSetInterval = global.setInterval;
+
+    let intervalCallback = null;
+    let intervalMilliseconds = null;
+
+    global.setInterval = (callback, milliseconds) => {
+        intervalCallback = callback;
+        intervalMilliseconds = milliseconds;
+
+        return 123;
+    };
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID'
+        );
+
+        client.state = {
+            ulid: '01TESTAUCTIONULID',
+            status: 'live',
+            active_nomination: {
+                ulid: '01TESTNOMINATIONULID',
+                expires_at: '2026-09-11T20:00:10.000Z',
+            },
+        };
+
+        const result =
+            client.startNominationCountdown();
+
+        assert.equal(
+            intervalMilliseconds,
+            1000
+        );
+
+        assert.equal(
+            typeof intervalCallback,
+            'function'
+        );
+
+        assert.equal(
+            result,
+            123
+        );
+    } finally {
+        global.setInterval = originalSetInterval;
+    }
+});
+
+test('it updates the nomination countdown on each ticker interval', () => {
+    const originalSetInterval = global.setInterval;
+    const originalDateNow = Date.now;
+
+    let intervalCallback = null;
+
+    global.setInterval = (callback) => {
+        intervalCallback = callback;
+
+        return 123;
+    };
+
+    Date.now = () =>
+        new Date(
+            '2026-09-11T20:00:04.000Z'
+        ).getTime();
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID'
+        );
+
+        client.state = {
+            ulid: '01TESTAUCTIONULID',
+            status: 'live',
+            active_nomination: {
+                ulid: '01TESTNOMINATIONULID',
+                expires_at: '2026-09-11T20:00:10.000Z',
+            },
+        };
+
+        client.startNominationCountdown();
+
+        intervalCallback();
+
+        assert.equal(
+            client.nominationRemainingMilliseconds,
+            6000
+        );
+    } finally {
+        global.setInterval = originalSetInterval;
+        Date.now = originalDateNow;
+    }
+});
+
+test('it stops the nomination countdown ticker', () => {
+    const originalSetInterval = global.setInterval;
+    const originalClearInterval = global.clearInterval;
+
+    let clearedIntervalId = null;
+
+    global.setInterval = () => 123;
+
+    global.clearInterval = (intervalId) => {
+        clearedIntervalId = intervalId;
+    };
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID'
+        );
+
+        client.startNominationCountdown();
+
+        client.stopNominationCountdown();
+
+        assert.equal(
+            clearedIntervalId,
+            123
+        );
+    } finally {
+        global.setInterval = originalSetInterval;
+        global.clearInterval = originalClearInterval;
+    }
+});
+
+test('it clears the nomination countdown interval id when stopped', () => {
+    const originalSetInterval = global.setInterval;
+    const originalClearInterval = global.clearInterval;
+
+    global.setInterval = () => 123;
+    global.clearInterval = () => { };
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID'
+        );
+
+        client.startNominationCountdown();
+
+        assert.equal(
+            client.nominationCountdownIntervalId,
+            123
+        );
+
+        client.stopNominationCountdown();
+
+        assert.equal(
+            client.nominationCountdownIntervalId,
+            null
+        );
+    } finally {
+        global.setInterval = originalSetInterval;
+        global.clearInterval = originalClearInterval;
+    }
+});

@@ -8,6 +8,7 @@ export default class AuctionClient {
         this.echo = echo;
         this.state = null;
         this.nominationRemainingMilliseconds = 0;
+        this.nominationCountdownIntervalId = null;
     }
 
     async loadSnapshot() {
@@ -147,6 +148,25 @@ export default class AuctionClient {
             this.getRemainingNominationMilliseconds(now);
 
         return this.nominationRemainingMilliseconds;
+    }
+
+    startNominationCountdown() {
+        this.nominationCountdownIntervalId = setInterval(
+            () => {
+                this.updateNominationCountdown();
+            },
+            1000
+        );
+
+        return this.nominationCountdownIntervalId;
+    }
+
+    stopNominationCountdown() {
+        clearInterval(
+            this.nominationCountdownIntervalId
+        );
+
+        this.nominationCountdownIntervalId = null;
     }
 
     getState() {
