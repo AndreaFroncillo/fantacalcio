@@ -9,6 +9,7 @@ export default class AuctionClient {
         this.state = null;
         this.nominationRemainingMilliseconds = 0;
         this.nominationCountdownIntervalId = null;
+        this.auctionChannel = null;
     }
 
     async loadSnapshot() {
@@ -62,6 +63,8 @@ export default class AuctionClient {
         const channel = this.echo.private(
             `auction.${this.auctionUlid}`
         );
+
+        this.auctionChannel = channel;
 
         let shouldResyncOnConnect = false;
 
@@ -189,6 +192,14 @@ export default class AuctionClient {
     destroy() {
         if (this.nominationCountdownIntervalId !== null) {
             this.stopNominationCountdown();
+        }
+
+        if (this.echo && this.auctionChannel !== null) {
+            this.echo.leave(
+                `auction.${this.auctionUlid}`
+            );
+
+            this.auctionChannel = null;
         }
     }
 

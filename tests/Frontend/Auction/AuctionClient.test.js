@@ -1455,3 +1455,45 @@ test('it stops nomination countdown ticker when client is destroyed', () => {
         global.clearInterval = originalClearInterval;
     }
 });
+
+test('it leaves auction realtime channel when client is destroyed', () => {
+    let leftChannelName = null;
+
+    const channel = {
+        listen() {
+            return this;
+        },
+    };
+
+    const echo = {
+        private() {
+            return channel;
+        },
+
+        leave(channelName) {
+            leftChannelName = channelName;
+        },
+
+        connector: {
+            pusher: {
+                connection: {
+                    bind() { },
+                },
+            },
+        },
+    };
+
+    const client = new AuctionClient(
+        '01TESTAUCTIONULID',
+        echo
+    );
+
+    client.subscribe();
+
+    client.destroy();
+
+    assert.equal(
+        leftChannelName,
+        'auction.01TESTAUCTIONULID'
+    );
+});
