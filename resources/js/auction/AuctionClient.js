@@ -45,9 +45,18 @@ export default class AuctionClient {
             throw new Error('Echo instance is required.');
         }
 
-        return this.echo.private(
+        const channel = this.echo.private(
             `auction.${this.auctionUlid}`
         );
+
+        channel.listen(
+            '.auction.started',
+            async () => {
+                await this.loadSnapshot();
+            }
+        );
+
+        return channel;
     }
 
     getState() {

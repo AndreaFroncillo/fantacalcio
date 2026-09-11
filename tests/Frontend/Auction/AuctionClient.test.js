@@ -126,7 +126,11 @@ test('it fails when snapshot response does not contain data', async () => {
 test('it subscribes to the auction private channel', () => {
     let subscribedChannel = null;
 
-    const channel = {};
+    const channel = {
+        listen() {
+            return this;
+        },
+    };
 
     const echo = {
         private(channelName) {
@@ -149,4 +153,82 @@ test('it subscribes to the auction private channel', () => {
     );
 
     assert.equal(result, channel);
+});
+
+test('it reloads the snapshot when auction started is received', async () => {
+    const originalFetch = global.fetch;
+
+    let listenedEvent = null;
+    let eventHandler = null;
+
+    const channel = {
+        listen(eventName, callback) {
+            listenedEvent = eventName;
+            eventHandler = callback;
+
+            return this;
+        },
+    };
+
+    const echo = {
+        private() {
+            return channel;
+        },
+    };
+
+    const snapshot = {
+        ulid: '01TESTAUCTIONULID',
+        status: 'live',
+        active_role_phase: {
+            ulid: '01TESTPHASEULID',
+            role: 'P',
+            position: 1,
+            status: 'active',
+        },
+        active_nomination: null,
+        participants: [],
+    };
+
+    global.fetch = async () => ({
+        ok: true,
+        async json() {
+            return {
+                data: snapshot,
+            };
+        },
+    });
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID',
+            echo
+        );
+
+        client.subscribe();
+
+        assert.equal(
+            listenedEvent,
+            '.auction.started'
+        );
+
+        assert.equal(
+            typeof eventHandler,
+            'function'
+        );
+
+        await eventHandler({
+            auction_ulid: '01TESTAUCTIONULID',
+            status: 'live',
+            started_at: '2026-09-11T07:00:00.000000Z',
+            active_role_phase_ulid: '01TESTPHASEULID',
+            active_role: 'P',
+        });
+
+        assert.deepEqual(
+            client.getState(),
+            snapshot
+        );
+    } finally {
+        global.fetch = originalFetch;
+    }
 });
