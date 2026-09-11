@@ -186,6 +186,12 @@ export default class AuctionClient {
         this.nominationCountdownIntervalId = null;
     }
 
+    destroy() {
+        if (this.nominationCountdownIntervalId !== null) {
+            this.stopNominationCountdown();
+        }
+    }
+
     getState() {
         return this.state;
     }

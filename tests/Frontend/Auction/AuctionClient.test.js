@@ -1414,3 +1414,44 @@ test('it stops nomination countdown ticker when loaded snapshot has no active no
         global.clearInterval = originalClearInterval;
     }
 });
+
+test('it stops nomination countdown ticker when client is destroyed', () => {
+    const originalSetInterval = global.setInterval;
+    const originalClearInterval = global.clearInterval;
+
+    let clearedIntervalId = null;
+
+    global.setInterval = () => 123;
+
+    global.clearInterval = (intervalId) => {
+        clearedIntervalId = intervalId;
+    };
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID'
+        );
+
+        client.startNominationCountdown();
+
+        assert.equal(
+            client.nominationCountdownIntervalId,
+            123
+        );
+
+        client.destroy();
+
+        assert.equal(
+            clearedIntervalId,
+            123
+        );
+
+        assert.equal(
+            client.nominationCountdownIntervalId,
+            null
+        );
+    } finally {
+        global.setInterval = originalSetInterval;
+        global.clearInterval = originalClearInterval;
+    }
+});
