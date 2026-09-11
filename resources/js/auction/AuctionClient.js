@@ -53,6 +53,31 @@ export default class AuctionClient {
             `auction.${this.auctionUlid}`
         );
 
+        let shouldResyncOnConnect = false;
+
+        this.echo.connector.pusher.connection.bind(
+            'state_change',
+            async ({ previous, current }) => {
+                if (
+                    previous === 'connected' &&
+                    current !== 'connected'
+                ) {
+                    shouldResyncOnConnect = true;
+
+                    return;
+                }
+
+                if (
+                    current === 'connected' &&
+                    shouldResyncOnConnect
+                ) {
+                    shouldResyncOnConnect = false;
+
+                    await this.resync();
+                }
+            }
+        );
+
         channel.listen(
             '.auction.started',
             async () => {

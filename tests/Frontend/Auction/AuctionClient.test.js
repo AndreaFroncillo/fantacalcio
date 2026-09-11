@@ -138,6 +138,13 @@ test('it subscribes to the auction private channel', () => {
 
             return channel;
         },
+        connector: {
+            pusher: {
+                connection: {
+                    bind() { },
+                },
+            },
+        },
     };
 
     const client = new AuctionClient(
@@ -171,6 +178,13 @@ test('it reloads the snapshot when auction started is received', async () => {
     const echo = {
         private() {
             return channel;
+        },
+        connector: {
+            pusher: {
+                connection: {
+                    bind() { },
+                },
+            },
         },
     };
 
@@ -242,6 +256,13 @@ test('it reloads the snapshot when auction nomination started is received', asyn
     const echo = {
         private() {
             return channel;
+        },
+        connector: {
+            pusher: {
+                connection: {
+                    bind() { },
+                },
+            },
         },
     };
 
@@ -330,6 +351,13 @@ test('it reloads the snapshot when auction bid placed is received', async () => 
     const echo = {
         private() {
             return channel;
+        },
+        connector: {
+            pusher: {
+                connection: {
+                    bind() { },
+                },
+            },
         },
     };
 
@@ -425,6 +453,13 @@ test('it reloads the snapshot when auction nomination finalized is received', as
         private() {
             return channel;
         },
+        connector: {
+            pusher: {
+                connection: {
+                    bind() { },
+                },
+            },
+        },
     };
 
     const snapshot = {
@@ -495,6 +530,13 @@ test('it reloads the snapshot when auction role phase advanced is received', asy
     const echo = {
         private() {
             return channel;
+        },
+        connector: {
+            pusher: {
+                connection: {
+                    bind() { },
+                },
+            },
         },
     };
 
@@ -567,6 +609,13 @@ test('it reloads the snapshot when auction completed is received', async () => {
     const echo = {
         private() {
             return channel;
+        },
+        connector: {
+            pusher: {
+                connection: {
+                    bind() { },
+                },
+            },
         },
     };
 
@@ -644,6 +693,105 @@ test('it resyncs the auction snapshot', async () => {
 
         assert.deepEqual(result, snapshot);
         assert.deepEqual(client.getState(), snapshot);
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
+
+test('it resyncs the auction when realtime connection reconnects', async () => {
+    const originalFetch = global.fetch;
+
+    const listeners = {};
+    const connectionListeners = {};
+
+    const channel = {
+        listen(eventName, callback) {
+            listeners[eventName] = callback;
+
+            return this;
+        },
+    };
+
+    const echo = {
+        private() {
+            return channel;
+        },
+        connector: {
+            pusher: {
+                connection: {
+                    bind(eventName, callback) {
+                        connectionListeners[eventName] = callback;
+                    },
+                },
+            },
+        },
+    };
+
+    const snapshot = {
+        ulid: '01TESTAUCTIONULID',
+        status: 'live',
+        active_role_phase: null,
+        active_nomination: null,
+        participants: [],
+    };
+
+    let fetchCalls = 0;
+
+    global.fetch = async () => {
+        fetchCalls++;
+
+        return {
+            ok: true,
+            async json() {
+                return {
+                    data: snapshot,
+                };
+            },
+        };
+    };
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID',
+            echo
+        );
+
+        client.subscribe();
+
+        assert.equal(
+            typeof connectionListeners.state_change,
+            'function'
+        );
+
+        await connectionListeners.state_change({
+            previous: 'connecting',
+            current: 'connected',
+        });
+
+        assert.equal(fetchCalls, 0);
+        assert.equal(client.getState(), null);
+
+        await connectionListeners.state_change({
+            previous: 'connected',
+            current: 'unavailable',
+        });
+
+        await connectionListeners.state_change({
+            previous: 'unavailable',
+            current: 'connecting',
+        });
+
+        await connectionListeners.state_change({
+            previous: 'connecting',
+            current: 'connected',
+        });
+
+        assert.equal(fetchCalls, 1);
+
+        assert.deepEqual(
+            client.getState(),
+            snapshot
+        );
     } finally {
         global.fetch = originalFetch;
     }
