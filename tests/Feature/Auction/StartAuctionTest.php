@@ -8,17 +8,28 @@ use App\Domain\Auction\Enums\AuctionRolePhaseStatus;
 use App\Domain\Auction\Enums\AuctionStatus;
 use App\Domain\Market\Enums\MarketCapabilityType;
 use App\Domain\Market\Enums\MarketSessionStatus;
+use App\Events\Auction\AuctionStarted;
 use App\Models\Auction\Auction;
 use App\Models\Market\MarketCapability;
 use App\Models\Season\SeasonParticipation;
 use App\Models\Team\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use RuntimeException;
 use Tests\TestCase;
 
 class StartAuctionTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Event::fake([
+            AuctionStarted::class,
+        ]);
+    }
 
     public function test_it_starts_an_initialized_auction(): void
     {
@@ -239,5 +250,41 @@ class StartAuctionTest extends TestCase
         );
 
         app(StartAuction::class)->execute($auction);
+    }
+
+    public function test_it_dispatches_realtime_event_when_auction_starts(): void
+    {
+        $auction = $this->createInitializedAuction();
+
+        $result = app(StartAuction::class)
+            ->execute($auction);
+
+        Event::assertDispatched(
+            AuctionStarted::class,
+            function (AuctionStarted $event) use ($result) {
+                return $event->auction->is($result)
+                    && $event->auction->status === AuctionStatus::LIVE;
+            }
+        );
+    }
+
+    public function test_it_does_not_dispatch_realtime_event_when_auction_start_fails(): void
+    {
+        $auction = $this->createInitializedAuction();
+
+        $auction->update([
+            'status' => AuctionStatus::LIVE,
+        ]);
+
+        try {
+            app(StartAuction::class)
+                ->execute($auction);
+        } catch (RuntimeException) {
+            //
+        }
+
+        Event::assertNotDispatched(
+            AuctionStarted::class
+        );
     }
 }

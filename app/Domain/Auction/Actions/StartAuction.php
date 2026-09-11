@@ -7,6 +7,7 @@ use App\Domain\Auction\Enums\AuctionStatus;
 use App\Domain\Football\Enums\PlayerRole;
 use App\Domain\Market\Enums\MarketCapabilityType;
 use App\Domain\Market\Enums\MarketSessionStatus;
+use App\Events\Auction\AuctionStarted;
 use App\Models\Auction\Auction;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -40,10 +41,14 @@ class StartAuction
                 'started_at' => $startedAt,
             ]);
 
-            return $auction->fresh([
+            $auction = $auction->fresh([
                 'rolePhases',
                 'participants',
             ]);
+
+            AuctionStarted::dispatch($auction);
+
+            return $auction;
         });
     }
 
