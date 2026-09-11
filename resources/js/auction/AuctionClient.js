@@ -151,6 +151,10 @@ export default class AuctionClient {
     }
 
     startNominationCountdown() {
+        if (this.nominationCountdownIntervalId !== null) {
+            return this.nominationCountdownIntervalId;
+        }
+
         this.nominationCountdownIntervalId = setInterval(
             () => {
                 this.updateNominationCountdown();

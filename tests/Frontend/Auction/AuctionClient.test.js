@@ -1129,3 +1129,49 @@ test('it clears the nomination countdown interval id when stopped', () => {
         global.clearInterval = originalClearInterval;
     }
 });
+
+test('it does not start a duplicate nomination countdown ticker', () => {
+    const originalSetInterval = global.setInterval;
+
+    let setIntervalCalls = 0;
+
+    global.setInterval = () => {
+        setIntervalCalls++;
+
+        return 123;
+    };
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID'
+        );
+
+        const firstIntervalId =
+            client.startNominationCountdown();
+
+        const secondIntervalId =
+            client.startNominationCountdown();
+
+        assert.equal(
+            setIntervalCalls,
+            1
+        );
+
+        assert.equal(
+            firstIntervalId,
+            123
+        );
+
+        assert.equal(
+            secondIntervalId,
+            123
+        );
+
+        assert.equal(
+            client.nominationCountdownIntervalId,
+            123
+        );
+    } finally {
+        global.setInterval = originalSetInterval;
+    }
+});
