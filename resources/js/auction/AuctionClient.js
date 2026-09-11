@@ -1,10 +1,11 @@
 export default class AuctionClient {
-    constructor(auctionUlid) {
+    constructor(auctionUlid, echo = null) {
         if (!auctionUlid) {
             throw new Error('Auction ULID is required.');
         }
 
         this.auctionUlid = auctionUlid;
+        this.echo = echo;
         this.state = null;
     }
 
@@ -37,6 +38,16 @@ export default class AuctionClient {
         this.state = payload.data;
 
         return this.state;
+    }
+
+    subscribe() {
+        if (!this.echo) {
+            throw new Error('Echo instance is required.');
+        }
+
+        return this.echo.private(
+            `auction.${this.auctionUlid}`
+        );
     }
 
     getState() {

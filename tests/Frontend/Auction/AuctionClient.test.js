@@ -122,3 +122,31 @@ test('it fails when snapshot response does not contain data', async () => {
         global.fetch = originalFetch;
     }
 });
+
+test('it subscribes to the auction private channel', () => {
+    let subscribedChannel = null;
+
+    const channel = {};
+
+    const echo = {
+        private(channelName) {
+            subscribedChannel = channelName;
+
+            return channel;
+        },
+    };
+
+    const client = new AuctionClient(
+        '01TESTAUCTIONULID',
+        echo
+    );
+
+    const result = client.subscribe();
+
+    assert.equal(
+        subscribedChannel,
+        'auction.01TESTAUCTIONULID'
+    );
+
+    assert.equal(result, channel);
+});
