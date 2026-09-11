@@ -1478,6 +1478,7 @@ test('it leaves auction realtime channel when client is destroyed', () => {
             pusher: {
                 connection: {
                     bind() { },
+                    unbind() { },
                 },
             },
         },
@@ -1495,5 +1496,68 @@ test('it leaves auction realtime channel when client is destroyed', () => {
     assert.equal(
         leftChannelName,
         'auction.01TESTAUCTIONULID'
+    );
+});
+
+test('it unbinds realtime connection listener when client is destroyed', () => {
+    let boundCallback = null;
+    let unboundEventName = null;
+    let unboundCallback = null;
+
+    const channel = {
+        listen() {
+            return this;
+        },
+    };
+
+    const connection = {
+        bind(eventName, callback) {
+            if (eventName === 'state_change') {
+                boundCallback = callback;
+            }
+        },
+
+        unbind(eventName, callback) {
+            unboundEventName = eventName;
+            unboundCallback = callback;
+        },
+    };
+
+    const echo = {
+        private() {
+            return channel;
+        },
+
+        leave() { },
+
+        connector: {
+            pusher: {
+                connection,
+            },
+        },
+    };
+
+    const client = new AuctionClient(
+        '01TESTAUCTIONULID',
+        echo
+    );
+
+    client.subscribe();
+
+    assert.notEqual(
+        boundCallback,
+        null
+    );
+
+    client.destroy();
+
+    assert.equal(
+        unboundEventName,
+        'state_change'
+    );
+
+    assert.equal(
+        unboundCallback,
+        boundCallback
     );
 });

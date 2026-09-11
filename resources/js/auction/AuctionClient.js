@@ -10,6 +10,7 @@ export default class AuctionClient {
         this.nominationRemainingMilliseconds = 0;
         this.nominationCountdownIntervalId = null;
         this.auctionChannel = null;
+        this.realtimeStateChangeListener = null;
     }
 
     async loadSnapshot() {
@@ -68,31 +69,36 @@ export default class AuctionClient {
 
         let shouldResyncOnConnect = false;
 
-        this.echo.connector.pusher.connection.bind(
-            'state_change',
-            async ({ previous, current }) => {
-                if (
-                    previous === 'connected' &&
-                    current !== 'connected'
-                ) {
-                    shouldResyncOnConnect = true;
+        this.realtimeStateChangeListener = async ({
+            previous,
+            current,
+        }) => {
+            if (
+                previous === 'connected' &&
+                current !== 'connected'
+            ) {
+                shouldResyncOnConnect = true;
 
+                return;
+            }
+
+            if (
+                current === 'connected' &&
+                shouldResyncOnConnect
+            ) {
+                shouldResyncOnConnect = false;
+
+                try {
+                    await this.resync();
+                } catch {
                     return;
                 }
-
-                if (
-                    current === 'connected' &&
-                    shouldResyncOnConnect
-                ) {
-                    shouldResyncOnConnect = false;
-
-                    try {
-                        await this.resync();
-                    } catch {
-                        return;
-                    }
-                }
             }
+        };
+
+        this.echo.connector.pusher.connection.bind(
+            'state_change',
+            this.realtimeStateChangeListener
         );
 
         channel.listen(
@@ -192,6 +198,18 @@ export default class AuctionClient {
     destroy() {
         if (this.nominationCountdownIntervalId !== null) {
             this.stopNominationCountdown();
+        }
+
+        if (
+            this.echo &&
+            this.realtimeStateChangeListener !== null
+        ) {
+            this.echo.connector.pusher.connection.unbind(
+                'state_change',
+                this.realtimeStateChangeListener
+            );
+
+            this.realtimeStateChangeListener = null;
         }
 
         if (this.echo && this.auctionChannel !== null) {
