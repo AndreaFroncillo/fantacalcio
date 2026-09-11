@@ -39,6 +39,8 @@ export default class AuctionClient {
 
         this.state = payload.data;
 
+        this.updateNominationCountdown();
+
         return this.state;
     }
 
