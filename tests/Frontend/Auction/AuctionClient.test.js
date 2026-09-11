@@ -313,3 +313,97 @@ test('it reloads the snapshot when auction nomination started is received', asyn
         global.fetch = originalFetch;
     }
 });
+
+test('it reloads the snapshot when auction bid placed is received', async () => {
+    const originalFetch = global.fetch;
+
+    const listeners = {};
+
+    const channel = {
+        listen(eventName, callback) {
+            listeners[eventName] = callback;
+
+            return this;
+        },
+    };
+
+    const echo = {
+        private() {
+            return channel;
+        },
+    };
+
+    const snapshot = {
+        ulid: '01TESTAUCTIONULID',
+        status: 'live',
+        active_role_phase: {
+            ulid: '01TESTPHASEULID',
+            role: 'P',
+            position: 1,
+            status: 'active',
+        },
+        active_nomination: {
+            ulid: '01TESTNOMINATIONULID',
+            player_season_ulid: '01TESTPLAYERSEASONULID',
+            turn_number: 1,
+            opening_price: 1,
+            status: 'active',
+            timer_started_at: '2026-09-11T10:00:00.000000Z',
+            expires_at: '2026-09-11T10:01:10.000000Z',
+            player: {},
+            nominator: {
+                ulid: '01TESTPARTICIPANTULID',
+                nomination_position: 1,
+            },
+            current_bid: {
+                ulid: '01TESTBIDULID',
+                amount: 10,
+                sequence_number: 1,
+                participant_ulid: '01TESTPARTICIPANTULID',
+                placed_at: '2026-09-11T10:00:20.000000Z',
+            },
+        },
+        participants: [],
+    };
+
+    global.fetch = async () => ({
+        ok: true,
+        async json() {
+            return {
+                data: snapshot,
+            };
+        },
+    });
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID',
+            echo
+        );
+
+        client.subscribe();
+
+        assert.equal(
+            typeof listeners['.auction.bid.placed'],
+            'function'
+        );
+
+        await listeners['.auction.bid.placed']({
+            auction_ulid: '01TESTAUCTIONULID',
+            nomination_ulid: '01TESTNOMINATIONULID',
+            bid_ulid: '01TESTBIDULID',
+            auction_participant_ulid: '01TESTPARTICIPANTULID',
+            amount: 10,
+            sequence_number: 1,
+            placed_at: '2026-09-11T10:00:20.000000Z',
+            expires_at: '2026-09-11T10:01:10.000000Z',
+        });
+
+        assert.deepEqual(
+            client.getState(),
+            snapshot
+        );
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
