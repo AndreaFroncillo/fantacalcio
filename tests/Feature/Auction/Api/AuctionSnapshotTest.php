@@ -841,4 +841,116 @@ class AuctionSnapshotTest extends TestCase
                 ],
             ]);
     }
+
+    public function test_auction_snapshot_allows_league_president_to_confirm_nomination(): void
+    {
+        $auction = Auction::factory()->live()->create();
+
+        $leagueSeason = $auction
+            ->marketSession
+            ->leagueSeason;
+
+        $president = User::factory()->create();
+
+        LeagueMembership::factory()
+            ->president()
+            ->create([
+                'league_id' => $leagueSeason->league_id,
+                'user_id' => $president->id,
+            ]);
+
+        $response = $this
+            ->actingAs($president)
+            ->getJson("/api/auctions/{$auction->ulid}");
+
+        $response
+            ->assertOk()
+            ->assertJsonPath(
+                'data.permissions.can_confirm_nomination',
+                true
+            );
+    }
+
+    public function test_auction_snapshot_denies_confirm_nomination_for_normal_league_member(): void
+    {
+        $auction = Auction::factory()->live()->create();
+
+        $leagueSeason = $auction
+            ->marketSession
+            ->leagueSeason;
+
+        $member = User::factory()->create();
+
+        LeagueMembership::factory()->create([
+            'league_id' => $leagueSeason->league_id,
+            'user_id' => $member->id,
+        ]);
+
+        $response = $this
+            ->actingAs($member)
+            ->getJson("/api/auctions/{$auction->ulid}");
+
+        $response
+            ->assertOk()
+            ->assertJsonPath(
+                'data.permissions.can_confirm_nomination',
+                false
+            );
+    }
+
+    public function test_auction_snapshot_allows_league_president_to_reject_nomination(): void
+    {
+        $auction = Auction::factory()->live()->create();
+
+        $leagueSeason = $auction
+            ->marketSession
+            ->leagueSeason;
+
+        $president = User::factory()->create();
+
+        LeagueMembership::factory()
+            ->president()
+            ->create([
+                'league_id' => $leagueSeason->league_id,
+                'user_id' => $president->id,
+            ]);
+
+        $response = $this
+            ->actingAs($president)
+            ->getJson("/api/auctions/{$auction->ulid}");
+
+        $response
+            ->assertOk()
+            ->assertJsonPath(
+                'data.permissions.can_reject_nomination',
+                true
+            );
+    }
+
+    public function test_auction_snapshot_denies_reject_nomination_for_normal_league_member(): void
+    {
+        $auction = Auction::factory()->live()->create();
+
+        $leagueSeason = $auction
+            ->marketSession
+            ->leagueSeason;
+
+        $member = User::factory()->create();
+
+        LeagueMembership::factory()->create([
+            'league_id' => $leagueSeason->league_id,
+            'user_id' => $member->id,
+        ]);
+
+        $response = $this
+            ->actingAs($member)
+            ->getJson("/api/auctions/{$auction->ulid}");
+
+        $response
+            ->assertOk()
+            ->assertJsonPath(
+                'data.permissions.can_reject_nomination',
+                false
+            );
+    }
 }

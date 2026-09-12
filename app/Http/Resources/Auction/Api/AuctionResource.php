@@ -24,6 +24,16 @@ class AuctionResource extends JsonResource
             'bid_extension_seconds' => $this->bid_extension_seconds,
             'current_participant_ulid' => $this->currentParticipant?->ulid,
 
+            'permissions' => [
+                'can_confirm_nomination' => $request
+                    ->user()
+                    ->can('confirm', $this->resource),
+
+                'can_reject_nomination' => $request
+                    ->user()
+                    ->can('reject', $this->resource),
+            ],
+
             'active_role_phase' => $activeRolePhase
                 ? [
                     'ulid' => $activeRolePhase->ulid,
