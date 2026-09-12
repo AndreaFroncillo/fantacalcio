@@ -193,7 +193,7 @@ test('it renders active nomination player after loading snapshot', async () => {
             };
         }
 
-        subscribe() {}
+        subscribe() { }
     }
 
     await bootstrapAuctionPage({
@@ -247,7 +247,7 @@ test('it renders current bid amount after loading snapshot', async () => {
             };
         }
 
-        subscribe() {}
+        subscribe() { }
     }
 
     await bootstrapAuctionPage({
@@ -259,5 +259,55 @@ test('it renders current bid amount after loading snapshot', async () => {
     assert.equal(
         currentBidElement.textContent,
         '25'
+    );
+});
+
+test('it renders nomination countdown updates', async () => {
+    const countdownElement = {
+        textContent: '',
+    };
+
+    let countdownListener = null;
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (selector === '[data-auction-countdown]') {
+                return countdownElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setNominationCountdownListener(listener) {
+            countdownListener = listener;
+        }
+
+        async loadSnapshot() {
+            return {
+                ulid: '01TESTAUCTIONULID',
+                status: 'active',
+            };
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    countdownListener(6000);
+
+    assert.equal(
+        countdownElement.textContent,
+        '6'
     );
 });

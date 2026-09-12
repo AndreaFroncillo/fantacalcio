@@ -35,6 +35,11 @@
             Offerta corrente:
             <span data-auction-current-bid></span>
         </p>
+
+        <p>
+            Timer:
+            <span data-auction-countdown></span>
+        </p>
     </main>
 </body>
 

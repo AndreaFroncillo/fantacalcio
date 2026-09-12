@@ -12,6 +12,22 @@ export async function bootstrapAuctionPage({
         echo
     );
 
+    const countdownElement = element.querySelector(
+        '[data-auction-countdown]'
+    );
+
+    if (countdownElement) {
+        client.setNominationCountdownListener(
+            (remainingMilliseconds) => {
+                countdownElement.textContent = String(
+                    Math.ceil(
+                        remainingMilliseconds / 1000
+                    )
+                );
+            }
+        );
+    }
+
     const snapshot = await client.loadSnapshot();
 
     const statusElement = element.querySelector(

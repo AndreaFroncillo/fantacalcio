@@ -1637,3 +1637,41 @@ test('it can destroy auction client more than once safely', () => {
         global.clearInterval = originalClearInterval;
     }
 });
+
+test('it notifies when nomination countdown is updated', () => {
+    const client = new AuctionClient(
+        '01TESTAUCTIONULID'
+    );
+
+    client.state = {
+        active_nomination: {
+            expires_at: '2026-09-12T20:00:10.000Z',
+        },
+    };
+
+    let notifiedRemainingMilliseconds = null;
+
+    client.setNominationCountdownListener(
+        (remainingMilliseconds) => {
+            notifiedRemainingMilliseconds =
+                remainingMilliseconds;
+        }
+    );
+
+    const remainingMilliseconds =
+        client.updateNominationCountdown(
+            new Date(
+                '2026-09-12T20:00:04.000Z'
+            ).getTime()
+        );
+
+    assert.equal(
+        remainingMilliseconds,
+        6000
+    );
+
+    assert.equal(
+        notifiedRemainingMilliseconds,
+        6000
+    );
+});
