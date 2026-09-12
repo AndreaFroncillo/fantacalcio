@@ -2747,3 +2747,121 @@ test('it clears previous bid error before placing a new bid', async () => {
         ''
     );
 });
+
+test('it prevents duplicate bid while previous bid is pending', async () => {
+    let clickListener = null;
+
+    const bidControlsElement = {
+        innerHTML: '',
+
+        addEventListener(eventName, listener) {
+            if (eventName === 'click') {
+                clickListener = listener;
+            }
+        },
+    };
+
+    let resolveBid = null;
+
+    const calls = {
+        placeBid: 0,
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            this.snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                current_participant_ulid:
+                    '01PARTICIPANT2',
+
+                active_role_phase: {
+                    role: 'P',
+                },
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                    opening_price: 1,
+
+                    current_bid: {
+                        amount: 25,
+                        participant_ulid:
+                            '01PARTICIPANT1',
+                    },
+                },
+
+                participants: [],
+            };
+
+            this.snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        async placeBid() {
+            calls.placeBid += 1;
+
+            return new Promise((resolve) => {
+                resolveBid = resolve;
+            });
+        }
+
+        subscribe() { }
+    }
+
+    const element = {
+        dataset: {
+            auctionUlid:
+                '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-bid-controls]'
+            ) {
+                return bidControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    const firstClickPromise = clickListener({
+        target: {
+            dataset: {
+                bidIncrement: '1',
+            },
+        },
+    });
+
+    const secondClickPromise = clickListener({
+        target: {
+            dataset: {
+                bidIncrement: '1',
+            },
+        },
+    });
+
+    assert.equal(
+        calls.placeBid,
+        1
+    );
+
+    resolveBid();
+
+    await firstClickPromise;
+    await secondClickPromise;
+});

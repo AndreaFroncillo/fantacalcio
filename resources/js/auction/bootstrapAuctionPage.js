@@ -14,6 +14,8 @@ export async function bootstrapAuctionPage({
 
     let currentSnapshot = null;
 
+    let isBidPending = false;
+
     const escapeHtml = (value) => {
         return String(value)
             .replaceAll('&', '&amp;')
@@ -207,6 +209,10 @@ export async function bootstrapAuctionPage({
                     return;
                 }
 
+                if (isBidPending) {
+                    return;
+                }
+
                 const activeNomination =
                     currentSnapshot
                         ?.active_nomination;
@@ -250,6 +256,8 @@ export async function bootstrapAuctionPage({
                     bidErrorElement.textContent = '';
                 }
 
+                isBidPending = true;
+
                 try {
                     await client.placeBid(
                         activeNomination.ulid,
@@ -262,6 +270,8 @@ export async function bootstrapAuctionPage({
                                 ? error.message
                                 : 'Unable to place auction bid.';
                     }
+                } finally {
+                    isBidPending = false;
                 }
             }
         );
