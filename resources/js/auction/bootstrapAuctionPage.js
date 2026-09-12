@@ -128,7 +128,10 @@ export async function bootstrapAuctionPage({
         );
 
         if (bidControlsElement) {
-            if (!snapshot.active_nomination) {
+            if (
+                !snapshot.active_nomination ||
+                snapshot.current_participant_ulid === null
+            ) {
                 bidControlsElement.innerHTML = '';
 
                 return;

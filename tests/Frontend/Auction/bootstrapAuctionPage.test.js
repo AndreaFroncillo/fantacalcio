@@ -3330,3 +3330,75 @@ test('it renders bid controls when participants list is empty', async () => {
         /data-bid-increment="10"/
     );
 });
+
+test('it does not render bid controls when current user is not an auction participant', async () => {
+    const bidControlsElement = {
+        innerHTML: '',
+
+        addEventListener() { },
+    };
+
+    let snapshotListener = null;
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-bid-controls]'
+            ) {
+                return bidControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                current_participant_ulid: null,
+
+                active_role_phase: {
+                    role: 'P',
+                },
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                    opening_price: 1,
+                    current_bid: null,
+                },
+
+                participants: [],
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.equal(
+        bidControlsElement.innerHTML,
+        ''
+    );
+});
