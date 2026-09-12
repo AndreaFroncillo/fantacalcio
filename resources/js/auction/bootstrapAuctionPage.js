@@ -28,6 +28,17 @@ export async function bootstrapAuctionPage({
     const renderSnapshot = (snapshot) => {
         currentSnapshot = snapshot;
 
+        const bidErrorElement = element.querySelector(
+            '[data-auction-bid-error]'
+        );
+
+        if (
+            bidErrorElement &&
+            !snapshot.active_nomination
+        ) {
+            bidErrorElement.textContent = '';
+        }
+
         const statusElement = element.querySelector(
             '[data-auction-status]'
         );

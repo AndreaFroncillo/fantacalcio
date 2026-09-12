@@ -3578,3 +3578,112 @@ test('it does not render bid controls when current participant already has highe
         ''
     );
 });
+
+test('it clears bid error when active nomination ends', async () => {
+    let snapshotListener = null;
+
+    const bidErrorElement = {
+        textContent: 'Unable to place auction bid (422).',
+    };
+
+    const bidControlsElement = {
+        innerHTML: '',
+
+        addEventListener() { },
+    };
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-bid-error]'
+            ) {
+                return bidErrorElement;
+            }
+
+            if (
+                selector ===
+                '[data-auction-bid-controls]'
+            ) {
+                return bidControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                current_participant_ulid:
+                    '01PARTICIPANT2',
+
+                active_role_phase: {
+                    role: 'P',
+                },
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                    opening_price: 1,
+
+                    current_bid: {
+                        amount: 25,
+                        participant_ulid:
+                            '01PARTICIPANT1',
+                    },
+                },
+
+                participants: [],
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.equal(
+        bidErrorElement.textContent,
+        'Unable to place auction bid (422).'
+    );
+
+    snapshotListener({
+        status: 'live',
+
+        current_participant_ulid:
+            '01PARTICIPANT2',
+
+        active_role_phase: {
+            role: 'P',
+        },
+
+        active_nomination: null,
+
+        participants: [],
+    });
+
+    assert.equal(
+        bidErrorElement.textContent,
+        ''
+    );
+});
