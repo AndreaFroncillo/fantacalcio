@@ -1796,3 +1796,115 @@ test('it renders bid increment controls for active nomination', async () => {
         /\+10/
     );
 });
+
+test('it clears bid controls when active nomination ends', async () => {
+    const bidControlsElement = {
+        innerHTML: '',
+    };
+
+    let snapshotListener = null;
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-bid-controls]'
+            ) {
+                return bidControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_role_phase: {
+                    role: 'P',
+                },
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+
+                    current_bid: {
+                        amount: 25,
+                        participant_ulid: '01PARTICIPANT1',
+                    },
+                },
+
+                participants: [
+                    {
+                        ulid: '01PARTICIPANT1',
+                        nomination_position: 1,
+
+                        team: {
+                            ulid: '01TEAM1',
+                            name: 'Team Alpha',
+                            short_name: 'ALP',
+                            current_balance: 420,
+                        },
+                    },
+                ],
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.match(
+        bidControlsElement.innerHTML,
+        /data-bid-increment="1"/
+    );
+
+    snapshotListener({
+        status: 'live',
+
+        active_role_phase: {
+            role: 'P',
+        },
+
+        active_nomination: null,
+
+        participants: [
+            {
+                ulid: '01PARTICIPANT1',
+                nomination_position: 1,
+
+                team: {
+                    ulid: '01TEAM1',
+                    name: 'Team Alpha',
+                    short_name: 'ALP',
+                    current_balance: 420,
+                },
+            },
+        ],
+    });
+
+    assert.equal(
+        bidControlsElement.innerHTML,
+        ''
+    );
+});
