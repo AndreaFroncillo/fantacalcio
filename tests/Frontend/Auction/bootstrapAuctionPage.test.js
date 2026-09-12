@@ -1704,6 +1704,8 @@ test('it handles participant without team', async () => {
 test('it renders bid increment controls for active nomination', async () => {
     const bidControlsElement = {
         innerHTML: '',
+
+        addEventListener() { },
     };
 
     let snapshotListener = null;
@@ -1800,6 +1802,8 @@ test('it renders bid increment controls for active nomination', async () => {
 test('it clears bid controls when active nomination ends', async () => {
     const bidControlsElement = {
         innerHTML: '',
+
+        addEventListener() { },
     };
 
     let snapshotListener = null;
@@ -1906,5 +1910,278 @@ test('it clears bid controls when active nomination ends', async () => {
     assert.equal(
         bidControlsElement.innerHTML,
         ''
+    );
+});
+
+test('it places current bid plus one from bid increment control', async () => {
+    let clickListener = null;
+
+    const bidControlsElement = {
+        innerHTML: '',
+
+        addEventListener(eventName, listener) {
+            if (eventName === 'click') {
+                clickListener = listener;
+            }
+        },
+    };
+
+    const calls = {
+        placeBid: [],
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            this.snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_role_phase: {
+                    role: 'P',
+                },
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                    opening_price: 1,
+
+                    current_bid: {
+                        amount: 25,
+                        participant_ulid: '01PARTICIPANT1',
+                    },
+                },
+
+                participants: [],
+            };
+
+            this.snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        async placeBid(
+            nominationUlid,
+            amount
+        ) {
+            calls.placeBid.push({
+                nominationUlid,
+                amount,
+            });
+        }
+
+        subscribe() { }
+    }
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-bid-controls]'
+            ) {
+                return bidControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.ok(clickListener);
+
+    await clickListener({
+        target: {
+            dataset: {
+                bidIncrement: '1',
+            },
+        },
+    });
+
+    assert.deepEqual(
+        calls.placeBid,
+        [
+            {
+                nominationUlid:
+                    '01NOMINATIONULID',
+                amount: 26,
+            },
+        ]
+    );
+
+    await clickListener({
+        target: {
+            dataset: {
+                bidIncrement: '5',
+            },
+        },
+    });
+
+    await clickListener({
+        target: {
+            dataset: {
+                bidIncrement: '10',
+            },
+        },
+    });
+
+    assert.deepEqual(
+        calls.placeBid,
+        [
+            {
+                nominationUlid:
+                    '01NOMINATIONULID',
+                amount: 26,
+            },
+            {
+                nominationUlid:
+                    '01NOMINATIONULID',
+                amount: 30,
+            },
+            {
+                nominationUlid:
+                    '01NOMINATIONULID',
+                amount: 35,
+            },
+        ]
+    );
+});
+
+test('it places opening price from plus one when nomination has no current bid', async () => {
+    let clickListener = null;
+
+    const bidControlsElement = {
+        innerHTML: '',
+
+        addEventListener(eventName, listener) {
+            if (eventName === 'click') {
+                clickListener = listener;
+            }
+        },
+    };
+
+    const calls = {
+        placeBid: [],
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            this.snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_role_phase: {
+                    role: 'P',
+                },
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                    opening_price: 1,
+                    current_bid: null,
+                },
+
+                participants: [],
+            };
+
+            this.snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        async placeBid(
+            nominationUlid,
+            amount
+        ) {
+            calls.placeBid.push({
+                nominationUlid,
+                amount,
+            });
+        }
+
+        subscribe() { }
+    }
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-bid-controls]'
+            ) {
+                return bidControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    await clickListener({
+        target: {
+            dataset: {
+                bidIncrement: '1',
+            },
+        },
+    });
+
+    await clickListener({
+        target: {
+            dataset: {
+                bidIncrement: '5',
+            },
+        },
+    });
+
+    await clickListener({
+        target: {
+            dataset: {
+                bidIncrement: '10',
+            },
+        },
+    });
+
+    assert.deepEqual(
+        calls.placeBid,
+        [
+            {
+                nominationUlid:
+                    '01NOMINATIONULID',
+                amount: 1,
+            },
+            {
+                nominationUlid:
+                    '01NOMINATIONULID',
+                amount: 5,
+            },
+            {
+                nominationUlid:
+                    '01NOMINATIONULID',
+                amount: 10,
+            },
+        ]
     );
 });

@@ -12,6 +12,8 @@ export async function bootstrapAuctionPage({
         echo
     );
 
+    let currentSnapshot = null;
+
     const escapeHtml = (value) => {
         return String(value)
             .replaceAll('&', '&amp;')
@@ -22,6 +24,8 @@ export async function bootstrapAuctionPage({
     };
 
     const renderSnapshot = (snapshot) => {
+        currentSnapshot = snapshot;
+
         const statusElement = element.querySelector(
             '[data-auction-status]'
         );
@@ -176,6 +180,55 @@ export async function bootstrapAuctionPage({
                             )
                         )
                         : '';
+            }
+        );
+    }
+
+    const bidControlsElement = element.querySelector(
+        '[data-auction-bid-controls]'
+    );
+
+    if (bidControlsElement) {
+        bidControlsElement.addEventListener(
+            'click',
+            async (event) => {
+                const increment =
+                    Number(
+                        event.target
+                            ?.dataset
+                            ?.bidIncrement
+                    );
+
+                if (!increment) {
+                    return;
+                }
+
+                const activeNomination =
+                    currentSnapshot
+                        ?.active_nomination;
+
+                if (!activeNomination) {
+                    return;
+                }
+
+                const currentBidAmount =
+                    activeNomination
+                        .current_bid
+                        ?.amount;
+
+                const amount =
+                    currentBidAmount !== undefined &&
+                        currentBidAmount !== null
+                        ? currentBidAmount + increment
+                        : Math.max(
+                            activeNomination.opening_price,
+                            increment
+                        );
+
+                await client.placeBid(
+                    activeNomination.ulid,
+                    amount
+                );
             }
         );
     }
