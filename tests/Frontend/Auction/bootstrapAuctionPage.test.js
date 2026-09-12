@@ -1198,3 +1198,157 @@ test('it renders current highest bidder in participants list', async () => {
         /Miglior offerente/
     );
 });
+
+test('it moves current highest bidder when snapshot changes', async () => {
+    const participantsElement = {
+        innerHTML: '',
+    };
+
+    let snapshotListener = null;
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-participants]'
+            ) {
+                return participantsElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_role_phase: {
+                    role: 'P',
+                },
+
+                active_nomination: {
+                    nominator: {
+                        ulid: '01PARTICIPANT1',
+                        nomination_position: 1,
+                    },
+
+                    current_bid: {
+                        amount: 25,
+                        participant_ulid: '01PARTICIPANT1',
+                    },
+                },
+
+                participants: [
+                    {
+                        ulid: '01PARTICIPANT1',
+                        nomination_position: 1,
+
+                        team: {
+                            ulid: '01TEAM1',
+                            name: 'Team Alpha',
+                            short_name: 'ALP',
+                            current_balance: 420,
+                        },
+                    },
+
+                    {
+                        ulid: '01PARTICIPANT2',
+                        nomination_position: 2,
+
+                        team: {
+                            ulid: '01TEAM2',
+                            name: 'Team Beta',
+                            short_name: 'BET',
+                            current_balance: 365,
+                        },
+                    },
+                ],
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.match(
+        participantsElement.innerHTML,
+        /Team Alpha[\s\S]*Miglior offerente/
+    );
+
+    snapshotListener({
+        status: 'live',
+
+        active_role_phase: {
+            role: 'P',
+        },
+
+        active_nomination: {
+            nominator: {
+                ulid: '01PARTICIPANT1',
+                nomination_position: 1,
+            },
+
+            current_bid: {
+                amount: 30,
+                participant_ulid: '01PARTICIPANT2',
+            },
+        },
+
+        participants: [
+            {
+                ulid: '01PARTICIPANT1',
+                nomination_position: 1,
+
+                team: {
+                    ulid: '01TEAM1',
+                    name: 'Team Alpha',
+                    short_name: 'ALP',
+                    current_balance: 420,
+                },
+            },
+
+            {
+                ulid: '01PARTICIPANT2',
+                nomination_position: 2,
+
+                team: {
+                    ulid: '01TEAM2',
+                    name: 'Team Beta',
+                    short_name: 'BET',
+                    current_balance: 365,
+                },
+            },
+        ],
+    });
+
+    assert.match(
+        participantsElement.innerHTML,
+        /Team Beta[\s\S]*Miglior offerente/
+    );
+
+    assert.doesNotMatch(
+        participantsElement.innerHTML,
+        /Team Alpha[\s\S]*Miglior offerente[\s\S]*Team Beta/
+    );
+});
