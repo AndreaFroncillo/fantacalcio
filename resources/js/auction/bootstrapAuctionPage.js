@@ -226,6 +226,10 @@ export async function bootstrapAuctionPage({
                     currentSnapshot
                         ?.current_participant_ulid;
 
+                if (currentParticipantUlid === null) {
+                    return;
+                }
+
                 const currentBidParticipantUlid =
                     activeNomination
                         .current_bid

@@ -3402,3 +3402,103 @@ test('it does not render bid controls when current user is not an auction partic
         ''
     );
 });
+
+test('it does not place bid when current user is not an auction participant', async () => {
+    let clickListener = null;
+
+    const bidControlsElement = {
+        innerHTML: '',
+
+        addEventListener(eventName, listener) {
+            if (eventName === 'click') {
+                clickListener = listener;
+            }
+        },
+    };
+
+    const calls = {
+        placeBid: [],
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            this.snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                current_participant_ulid: null,
+
+                active_role_phase: {
+                    role: 'P',
+                },
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                    opening_price: 1,
+                    current_bid: null,
+                },
+
+                participants: [],
+            };
+
+            this.snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        async placeBid(
+            nominationUlid,
+            amount
+        ) {
+            calls.placeBid.push({
+                nominationUlid,
+                amount,
+            });
+        }
+
+        subscribe() { }
+    }
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-bid-controls]'
+            ) {
+                return bidControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.ok(clickListener);
+
+    await clickListener({
+        target: {
+            dataset: {
+                bidIncrement: '1',
+            },
+        },
+    });
+
+    assert.deepEqual(
+        calls.placeBid,
+        []
+    );
+});
