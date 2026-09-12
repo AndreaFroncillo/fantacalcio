@@ -12,6 +12,56 @@ export async function bootstrapAuctionPage({
         echo
     );
 
+    const renderSnapshot = (snapshot) => {
+        const statusElement = element.querySelector(
+            '[data-auction-status]'
+        );
+
+        if (statusElement) {
+            statusElement.textContent =
+                snapshot.status ?? '';
+        }
+
+        const roleElement = element.querySelector(
+            '[data-auction-role]'
+        );
+
+        if (roleElement) {
+            roleElement.textContent =
+                snapshot.active_role_phase?.role ?? '';
+        }
+
+        const playerElement = element.querySelector(
+            '[data-auction-player]'
+        );
+
+        if (playerElement) {
+            playerElement.textContent =
+                snapshot.active_nomination?.player?.display_name ?? '';
+        }
+
+        const currentBidElement = element.querySelector(
+            '[data-auction-current-bid]'
+        );
+
+        if (currentBidElement) {
+            const currentBidAmount =
+                snapshot.active_nomination?.current_bid?.amount;
+
+            currentBidElement.textContent =
+                currentBidAmount !== undefined &&
+                    currentBidAmount !== null
+                    ? String(currentBidAmount)
+                    : '';
+        }
+    };
+
+    client.setSnapshotListener(
+        (snapshot) => {
+            renderSnapshot(snapshot);
+        }
+    );
+
     const countdownElement = element.querySelector(
         '[data-auction-countdown]'
     );
@@ -30,46 +80,7 @@ export async function bootstrapAuctionPage({
 
     const snapshot = await client.loadSnapshot();
 
-    const statusElement = element.querySelector(
-        '[data-auction-status]'
-    );
-
-    if (statusElement) {
-        statusElement.textContent = snapshot.status;
-    }
-
-    const roleElement = element.querySelector(
-        '[data-auction-role]'
-    );
-
-    if (roleElement) {
-        roleElement.textContent =
-            snapshot.active_role_phase?.role ?? '';
-    }
-
-    const playerElement = element.querySelector(
-        '[data-auction-player]'
-    );
-
-    if (playerElement) {
-        playerElement.textContent =
-            snapshot.active_nomination?.player?.display_name ?? '';
-    }
-
-    const currentBidElement = element.querySelector(
-        '[data-auction-current-bid]'
-    );
-
-    if (currentBidElement) {
-        const currentBidAmount =
-            snapshot.active_nomination?.current_bid?.amount;
-
-        currentBidElement.textContent =
-            currentBidAmount !== undefined &&
-                currentBidAmount !== null
-                ? String(currentBidAmount)
-                : '';
-    }
+    renderSnapshot(snapshot);
 
     client.subscribe();
 

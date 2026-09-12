@@ -10,6 +10,7 @@ export default class AuctionClient {
         this.nominationRemainingMilliseconds = 0;
         this.nominationCountdownIntervalId = null;
         this.nominationCountdownListener = null;
+        this.snapshotListener = null;
         this.auctionChannel = null;
         this.realtimeStateChangeListener = null;
     }
@@ -41,6 +42,10 @@ export default class AuctionClient {
         }
 
         this.state = payload.data;
+
+        if (this.snapshotListener) {
+            this.snapshotListener(this.state);
+        }
 
         this.updateNominationCountdown();
 
@@ -163,6 +168,10 @@ export default class AuctionClient {
 
     setNominationCountdownListener(listener) {
         this.nominationCountdownListener = listener;
+    }
+
+    setSnapshotListener(listener) {
+        this.snapshotListener = listener;
     }
 
     updateNominationCountdown(now = Date.now()) {

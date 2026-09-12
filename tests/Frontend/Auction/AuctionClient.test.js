@@ -1675,3 +1675,48 @@ test('it notifies when nomination countdown is updated', () => {
         6000
     );
 });
+
+test('it notifies when auction snapshot is loaded', async () => {
+    const originalFetch = global.fetch;
+
+    global.fetch = async () => ({
+        ok: true,
+
+        async json() {
+            return {
+                data: {
+                    ulid: '01TESTAUCTIONULID',
+                    status: 'active',
+                },
+            };
+        },
+    });
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID'
+        );
+
+        let notifiedSnapshot = null;
+
+        client.setSnapshotListener(
+            (snapshot) => {
+                notifiedSnapshot = snapshot;
+            }
+        );
+
+        const snapshot = await client.loadSnapshot();
+
+        assert.equal(
+            notifiedSnapshot,
+            snapshot
+        );
+
+        assert.equal(
+            notifiedSnapshot.status,
+            'active'
+        );
+    } finally {
+        global.fetch = originalFetch;
+    }
+});

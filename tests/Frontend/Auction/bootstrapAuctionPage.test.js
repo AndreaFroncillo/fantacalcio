@@ -20,6 +20,8 @@ test('it boots auction client from page auction ulid', async () => {
             };
         }
 
+        setSnapshotListener() {}
+
         async loadSnapshot() {
             calls.loadSnapshot++;
         }
@@ -88,6 +90,9 @@ test('it renders initial auction status after loading snapshot', async () => {
     };
 
     class FakeAuctionClient {
+
+        setSnapshotListener() {}
+
         async loadSnapshot() {
             return {
                 ulid: '01TESTAUCTIONULID',
@@ -130,6 +135,9 @@ test('it renders active role phase after loading snapshot', async () => {
     };
 
     class FakeAuctionClient {
+
+        setSnapshotListener() {}
+
         async loadSnapshot() {
             return {
                 ulid: '01TESTAUCTIONULID',
@@ -179,6 +187,9 @@ test('it renders active nomination player after loading snapshot', async () => {
     };
 
     class FakeAuctionClient {
+
+        setSnapshotListener() {}
+
         async loadSnapshot() {
             return {
                 ulid: '01TESTAUCTIONULID',
@@ -228,6 +239,9 @@ test('it renders current bid amount after loading snapshot', async () => {
     };
 
     class FakeAuctionClient {
+
+        setSnapshotListener() {}
+
         async loadSnapshot() {
             return {
                 ulid: '01TESTAUCTIONULID',
@@ -284,6 +298,8 @@ test('it renders nomination countdown updates', async () => {
     };
 
     class FakeAuctionClient {
+        setSnapshotListener() {}
+
         setNominationCountdownListener(listener) {
             countdownListener = listener;
         }
@@ -309,5 +325,122 @@ test('it renders nomination countdown updates', async () => {
     assert.equal(
         countdownElement.textContent,
         '6'
+    );
+});
+
+test('it rerenders auction data when snapshot changes', async () => {
+    const statusElement = {
+        textContent: '',
+    };
+
+    const roleElement = {
+        textContent: '',
+    };
+
+    const playerElement = {
+        textContent: '',
+    };
+
+    const currentBidElement = {
+        textContent: '',
+    };
+
+    let snapshotListener = null;
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (selector === '[data-auction-status]') {
+                return statusElement;
+            }
+
+            if (selector === '[data-auction-role]') {
+                return roleElement;
+            }
+
+            if (selector === '[data-auction-player]') {
+                return playerElement;
+            }
+
+            if (
+                selector ===
+                '[data-auction-current-bid]'
+            ) {
+                return currentBidElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            return {
+                status: 'active',
+                active_role_phase: {
+                    role: 'P',
+                },
+                active_nomination: {
+                    player: {
+                        display_name: 'Mario Rossi',
+                    },
+                    current_bid: {
+                        amount: 25,
+                    },
+                },
+            };
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    snapshotListener({
+        status: 'active',
+        active_role_phase: {
+            role: 'D',
+        },
+        active_nomination: {
+            player: {
+                display_name: 'Luigi Bianchi',
+            },
+            current_bid: {
+                amount: 40,
+            },
+        },
+    });
+
+    assert.equal(
+        statusElement.textContent,
+        'active'
+    );
+
+    assert.equal(
+        roleElement.textContent,
+        'D'
+    );
+
+    assert.equal(
+        playerElement.textContent,
+        'Luigi Bianchi'
+    );
+
+    assert.equal(
+        currentBidElement.textContent,
+        '40'
     );
 });
