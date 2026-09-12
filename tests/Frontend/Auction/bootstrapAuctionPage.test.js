@@ -1555,3 +1555,80 @@ test('it renders participants empty state when no participants exist', async () 
         /Nessun partecipante/
     );
 });
+
+test('it escapes participant team name html', async () => {
+    const participantsElement = {
+        innerHTML: '',
+    };
+
+    let snapshotListener = null;
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-participants]'
+            ) {
+                return participantsElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+                active_role_phase: null,
+                active_nomination: null,
+
+                participants: [
+                    {
+                        ulid: '01PARTICIPANT1',
+                        nomination_position: 1,
+
+                        team: {
+                            ulid: '01TEAM1',
+                            name: '<script>alert("xss")</script>',
+                            short_name: 'XSS',
+                            current_balance: 420,
+                        },
+                    },
+                ],
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.doesNotMatch(
+        participantsElement.innerHTML,
+        /<script>/
+    );
+
+    assert.match(
+        participantsElement.innerHTML,
+        /&lt;script&gt;/
+    );
+});

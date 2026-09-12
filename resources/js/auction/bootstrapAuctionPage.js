@@ -12,6 +12,15 @@ export async function bootstrapAuctionPage({
         echo
     );
 
+    const escapeHtml = (value) => {
+        return String(value)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    };
+
     const renderSnapshot = (snapshot) => {
         const statusElement = element.querySelector(
             '[data-auction-status]'
@@ -88,7 +97,7 @@ export async function bootstrapAuctionPage({
 
                         return `
                     <div>
-                        <span>${team.name}</span>
+                        <span>${escapeHtml(team.name)}</span>
                         <span>${team.current_balance}</span>
                         <span>
                             Posizione ${participant.nomination_position}
