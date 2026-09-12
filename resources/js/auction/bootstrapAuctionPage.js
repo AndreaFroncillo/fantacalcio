@@ -78,9 +78,7 @@ export async function bootstrapAuctionPage({
         );
     }
 
-    const snapshot = await client.loadSnapshot();
-
-    renderSnapshot(snapshot);
+    await client.loadSnapshot();
 
     client.subscribe();
 

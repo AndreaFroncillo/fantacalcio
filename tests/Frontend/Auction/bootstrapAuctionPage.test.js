@@ -20,7 +20,7 @@ test('it boots auction client from page auction ulid', async () => {
             };
         }
 
-        setSnapshotListener() {}
+        setSnapshotListener() { }
 
         async loadSnapshot() {
             calls.loadSnapshot++;
@@ -90,14 +90,19 @@ test('it renders initial auction status after loading snapshot', async () => {
     };
 
     class FakeAuctionClient {
-
-        setSnapshotListener() {}
+        setSnapshotListener(listener) {
+            this.snapshotListener = listener;
+        }
 
         async loadSnapshot() {
-            return {
+            const snapshot = {
                 ulid: '01TESTAUCTIONULID',
                 status: 'active',
             };
+
+            this.snapshotListener(snapshot);
+
+            return snapshot;
         }
 
         subscribe() { }
@@ -135,11 +140,12 @@ test('it renders active role phase after loading snapshot', async () => {
     };
 
     class FakeAuctionClient {
-
-        setSnapshotListener() {}
+        setSnapshotListener(listener) {
+            this.snapshotListener = listener;
+        }
 
         async loadSnapshot() {
-            return {
+            const snapshot = {
                 ulid: '01TESTAUCTIONULID',
                 status: 'active',
 
@@ -150,6 +156,10 @@ test('it renders active role phase after loading snapshot', async () => {
                     status: 'active',
                 },
             };
+
+            this.snapshotListener(snapshot);
+
+            return snapshot;
         }
 
         subscribe() { }
@@ -187,21 +197,27 @@ test('it renders active nomination player after loading snapshot', async () => {
     };
 
     class FakeAuctionClient {
-
-        setSnapshotListener() {}
+        setSnapshotListener(listener) {
+            this.snapshotListener = listener;
+        }
 
         async loadSnapshot() {
-            return {
+            const snapshot = {
                 ulid: '01TESTAUCTIONULID',
                 status: 'active',
 
                 active_nomination: {
                     ulid: '01TESTNOMINATION',
+
                     player: {
                         display_name: 'Mario Rossi',
                     },
                 },
             };
+
+            this.snapshotListener(snapshot);
+
+            return snapshot;
         }
 
         subscribe() { }
@@ -239,11 +255,12 @@ test('it renders current bid amount after loading snapshot', async () => {
     };
 
     class FakeAuctionClient {
-
-        setSnapshotListener() {}
+        setSnapshotListener(listener) {
+            this.snapshotListener = listener;
+        }
 
         async loadSnapshot() {
-            return {
+            const snapshot = {
                 ulid: '01TESTAUCTIONULID',
                 status: 'active',
 
@@ -259,6 +276,10 @@ test('it renders current bid amount after loading snapshot', async () => {
                     },
                 },
             };
+
+            this.snapshotListener(snapshot);
+
+            return snapshot;
         }
 
         subscribe() { }
@@ -298,7 +319,7 @@ test('it renders nomination countdown updates', async () => {
     };
 
     class FakeAuctionClient {
-        setSnapshotListener() {}
+        setSnapshotListener() { }
 
         setNominationCountdownListener(listener) {
             countdownListener = listener;
@@ -442,5 +463,73 @@ test('it rerenders auction data when snapshot changes', async () => {
     assert.equal(
         currentBidElement.textContent,
         '40'
+    );
+});
+
+test('it renders initial snapshot only once', async () => {
+    let snapshotListener = null;
+    let statusRenderCount = 0;
+
+    const statusElement = {
+        _textContent: '',
+
+        set textContent(value) {
+            this._textContent = value;
+            statusRenderCount++;
+        },
+
+        get textContent() {
+            return this._textContent;
+        },
+    };
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (selector === '[data-auction-status]') {
+                return statusElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'active',
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.equal(
+        statusElement.textContent,
+        'active'
+    );
+
+    assert.equal(
+        statusRenderCount,
+        1
     );
 });
