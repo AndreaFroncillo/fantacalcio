@@ -81,48 +81,46 @@ export async function bootstrapAuctionPage({
             if (participants.length === 0) {
                 participantsElement.innerHTML =
                     '<p>Nessun partecipante</p>';
+            } else {
+                participantsElement.innerHTML =
+                    participants
+                        .map((participant) => {
+                            const team =
+                                participant.team ?? {
+                                    name: 'Squadra non disponibile',
+                                    current_balance: '',
+                                };
 
-                return;
+                            const isCurrentNominator =
+                                snapshot.active_nomination
+                                    ?.nominator
+                                    ?.ulid === participant.ulid;
+
+                            const isCurrentHighestBidder =
+                                snapshot.active_nomination
+                                    ?.current_bid
+                                    ?.participant_ulid === participant.ulid;
+
+                            return `
+            <div>
+                <span>${escapeHtml(team.name)}</span>
+                <span>${team.current_balance}</span>
+                <span>
+                    Posizione ${participant.nomination_position}
+                </span>
+                ${isCurrentNominator
+                                    ? '<span>Nominatore corrente</span>'
+                                    : ''
+                                }
+                ${isCurrentHighestBidder
+                                    ? '<span>Miglior offerente</span>'
+                                    : ''
+                                }
+            </div>
+        `;
+                        })
+                        .join('');
             }
-
-            participantsElement.innerHTML =
-                participants
-                    .map((participant) => {
-                        const team =
-                            participant.team ?? {
-                                name: 'Squadra non disponibile',
-                                current_balance: '',
-                            };
-
-                        const isCurrentNominator =
-                            snapshot.active_nomination
-                                ?.nominator
-                                ?.ulid === participant.ulid;
-
-                        const isCurrentHighestBidder =
-                            snapshot.active_nomination
-                                ?.current_bid
-                                ?.participant_ulid === participant.ulid;
-
-                        return `
-                <div>
-                    <span>${escapeHtml(team.name)}</span>
-                    <span>${team.current_balance}</span>
-                    <span>
-                        Posizione ${participant.nomination_position}
-                    </span>
-                    ${isCurrentNominator
-                                ? '<span>Nominatore corrente</span>'
-                                : ''
-                            }
-                    ${isCurrentHighestBidder
-                                ? '<span>Miglior offerente</span>'
-                                : ''
-                            }
-                </div>
-            `;
-                    })
-                    .join('');
         }
 
         const bidControlsElement = element.querySelector(

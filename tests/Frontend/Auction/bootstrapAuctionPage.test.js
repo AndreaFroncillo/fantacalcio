@@ -3234,3 +3234,99 @@ test('it updates auction ui after placing bid and receiving realtime bid event',
         global.fetch = originalFetch;
     }
 });
+
+test('it renders bid controls when participants list is empty', async () => {
+    const participantsElement = {
+        innerHTML: '',
+    };
+
+    const bidControlsElement = {
+        innerHTML: '',
+
+        addEventListener() { },
+    };
+
+    let snapshotListener = null;
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-participants]'
+            ) {
+                return participantsElement;
+            }
+
+            if (
+                selector ===
+                '[data-auction-bid-controls]'
+            ) {
+                return bidControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_role_phase: {
+                    role: 'P',
+                },
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                    opening_price: 1,
+                    current_bid: null,
+                },
+
+                participants: [],
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.match(
+        participantsElement.innerHTML,
+        /Nessun partecipante/
+    );
+
+    assert.match(
+        bidControlsElement.innerHTML,
+        /data-bid-increment="1"/
+    );
+
+    assert.match(
+        bidControlsElement.innerHTML,
+        /data-bid-increment="5"/
+    );
+
+    assert.match(
+        bidControlsElement.innerHTML,
+        /data-bid-increment="10"/
+    );
+});
