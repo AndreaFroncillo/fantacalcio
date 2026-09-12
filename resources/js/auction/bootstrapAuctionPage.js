@@ -246,6 +246,10 @@ export async function bootstrapAuctionPage({
                             increment
                         );
 
+                if (bidErrorElement) {
+                    bidErrorElement.textContent = '';
+                }
+
                 try {
                     await client.placeBid(
                         activeNomination.ulid,

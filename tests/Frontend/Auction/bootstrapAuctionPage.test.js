@@ -2631,3 +2631,119 @@ test('it renders bid error when placing bid fails', async () => {
         'Unable to place auction bid (422).'
     );
 });
+
+test('it clears previous bid error before placing a new bid', async () => {
+    let clickListener = null;
+
+    const bidControlsElement = {
+        innerHTML: '',
+
+        addEventListener(eventName, listener) {
+            if (eventName === 'click') {
+                clickListener = listener;
+            }
+        },
+    };
+
+    const bidErrorElement = {
+        textContent: 'Previous bid error',
+    };
+
+    let errorTextWhenBidStarted = null;
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            this.snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                current_participant_ulid:
+                    '01PARTICIPANT2',
+
+                active_role_phase: {
+                    role: 'P',
+                },
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                    opening_price: 1,
+
+                    current_bid: {
+                        amount: 25,
+                        participant_ulid:
+                            '01PARTICIPANT1',
+                    },
+                },
+
+                participants: [],
+            };
+
+            this.snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        async placeBid() {
+            errorTextWhenBidStarted =
+                bidErrorElement.textContent;
+
+            return {};
+        }
+
+        subscribe() { }
+    }
+
+    const element = {
+        dataset: {
+            auctionUlid:
+                '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-bid-controls]'
+            ) {
+                return bidControlsElement;
+            }
+
+            if (
+                selector ===
+                '[data-auction-bid-error]'
+            ) {
+                return bidErrorElement;
+            }
+
+            return null;
+        },
+    };
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    await clickListener({
+        target: {
+            dataset: {
+                bidIncrement: '1',
+            },
+        },
+    });
+
+    assert.equal(
+        errorTextWhenBidStarted,
+        ''
+    );
+
+    assert.equal(
+        bidErrorElement.textContent,
+        ''
+    );
+});
