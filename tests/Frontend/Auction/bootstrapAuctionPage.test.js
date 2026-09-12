@@ -33,6 +33,10 @@ test('it boots auction client from page auction ulid', async () => {
         dataset: {
             auctionUlid: '01TESTAUCTIONULID',
         },
+
+        querySelector() {
+            return null;
+        },
     };
 
     const echo = {
@@ -61,5 +65,47 @@ test('it boots auction client from page auction ulid', async () => {
     assert.equal(
         calls.subscribe,
         1
+    );
+});
+
+test('it renders initial auction status after loading snapshot', async () => {
+    const statusElement = {
+        textContent: '',
+    };
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (selector === '[data-auction-status]') {
+                return statusElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        async loadSnapshot() {
+            return {
+                ulid: '01TESTAUCTIONULID',
+                status: 'active',
+            };
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.equal(
+        statusElement.textContent,
+        'active'
     );
 });

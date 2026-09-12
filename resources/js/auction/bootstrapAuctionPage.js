@@ -12,7 +12,15 @@ export async function bootstrapAuctionPage({
         echo
     );
 
-    await client.loadSnapshot();
+    const snapshot = await client.loadSnapshot();
+
+    const statusElement = element.querySelector(
+        '[data-auction-status]'
+    );
+
+    if (statusElement) {
+        statusElement.textContent = snapshot.status;
+    }
 
     client.subscribe();
 

@@ -15,6 +15,11 @@
         <h1>Asta</h1>
 
         <p>{{ $auction->ulid }}</p>
+
+        <p>
+            Stato:
+            <span data-auction-status></span>
+        </p>
     </main>
 </body>
 
