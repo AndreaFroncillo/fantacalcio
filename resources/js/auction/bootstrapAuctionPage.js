@@ -74,19 +74,28 @@ export async function bootstrapAuctionPage({
                                 ?.nominator
                                 ?.ulid === participant.ulid;
 
+                        const isCurrentHighestBidder =
+                            snapshot.active_nomination
+                                ?.current_bid
+                                ?.participant_ulid === participant.ulid;
+
                         return `
-                <div>
-                    <span>${team.name}</span>
-                    <span>${team.current_balance}</span>
-                    <span>
-                        Posizione ${participant.nomination_position}
-                    </span>
-                    ${isCurrentNominator
+                    <div>
+                        <span>${team.name}</span>
+                        <span>${team.current_balance}</span>
+                        <span>
+                            Posizione ${participant.nomination_position}
+                        </span>
+                        ${isCurrentNominator
                                 ? '<span>Nominatore corrente</span>'
                                 : ''
                             }
-                </div>
-            `;
+                        ${isCurrentHighestBidder
+                                ? '<span>Miglior offerente</span>'
+                                : ''
+                            }
+                    </div>
+                `;
                     })
                     .join('');
         }
