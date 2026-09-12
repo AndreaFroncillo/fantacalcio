@@ -20,6 +20,11 @@
             Stato:
             <span data-auction-status></span>
         </p>
+
+        <p>
+            Ruolo:
+            <span data-auction-role></span>
+        </p>
     </main>
 </body>
 

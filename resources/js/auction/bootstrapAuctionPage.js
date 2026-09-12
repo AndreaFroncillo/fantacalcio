@@ -22,6 +22,15 @@ export async function bootstrapAuctionPage({
         statusElement.textContent = snapshot.status;
     }
 
+    const roleElement = element.querySelector(
+        '[data-auction-role]'
+    );
+
+    if (roleElement) {
+        roleElement.textContent =
+            snapshot.active_role_phase?.role ?? '';
+    }
+
     client.subscribe();
 
     return client;

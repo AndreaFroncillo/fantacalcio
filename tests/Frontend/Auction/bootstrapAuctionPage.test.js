@@ -109,3 +109,52 @@ test('it renders initial auction status after loading snapshot', async () => {
         'active'
     );
 });
+
+test('it renders active role phase after loading snapshot', async () => {
+    const roleElement = {
+        textContent: '',
+    };
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (selector === '[data-auction-role]') {
+                return roleElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        async loadSnapshot() {
+            return {
+                ulid: '01TESTAUCTIONULID',
+                status: 'active',
+
+                active_role_phase: {
+                    ulid: '01TESTROLEPHASE',
+                    role: 'P',
+                    position: 1,
+                    status: 'active',
+                },
+            };
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.equal(
+        roleElement.textContent,
+        'P'
+    );
+});
