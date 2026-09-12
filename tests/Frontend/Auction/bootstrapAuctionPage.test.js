@@ -795,3 +795,103 @@ test('it updates auction ui after realtime bid event reloads snapshot', async ()
         global.fetch = originalFetch;
     }
 });
+
+test('it renders auction participants with team balance', async () => {
+    const participantsElement = {
+        innerHTML: '',
+    };
+
+    let snapshotListener = null;
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-participants]'
+            ) {
+                return participantsElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_role_phase: null,
+                active_nomination: null,
+
+                participants: [
+                    {
+                        ulid: '01PARTICIPANT1',
+                        nomination_position: 1,
+
+                        team: {
+                            ulid: '01TEAM1',
+                            name: 'Team Alpha',
+                            short_name: 'ALP',
+                            current_balance: 420,
+                        },
+                    },
+
+                    {
+                        ulid: '01PARTICIPANT2',
+                        nomination_position: 2,
+
+                        team: {
+                            ulid: '01TEAM2',
+                            name: 'Team Beta',
+                            short_name: 'BET',
+                            current_balance: 365,
+                        },
+                    },
+                ],
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.match(
+        participantsElement.innerHTML,
+        /Team Alpha/
+    );
+
+    assert.match(
+        participantsElement.innerHTML,
+        /420/
+    );
+
+    assert.match(
+        participantsElement.innerHTML,
+        /Team Beta/
+    );
+
+    assert.match(
+        participantsElement.innerHTML,
+        /365/
+    );
+});

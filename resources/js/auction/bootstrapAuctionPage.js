@@ -54,6 +54,30 @@ export async function bootstrapAuctionPage({
                     ? String(currentBidAmount)
                     : '';
         }
+
+        const participantsElement = element.querySelector(
+            '[data-auction-participants]'
+        );
+
+        if (participantsElement) {
+            const participants =
+                snapshot.participants ?? [];
+
+            participantsElement.innerHTML =
+                participants
+                    .map((participant) => {
+                        const team =
+                            participant.team;
+
+                        return `
+                    <div>
+                        <span>${team.name}</span>
+                        <span>${team.current_balance}</span>
+                    </div>
+                `;
+                    })
+                    .join('');
+        }
     };
 
     client.setSnapshotListener(

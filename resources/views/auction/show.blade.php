@@ -40,6 +40,12 @@
             Timer:
             <span data-auction-countdown></span>
         </p>
+
+        <section>
+            <h2>Partecipanti</h2>
+
+            <div data-auction-participants></div>
+        </section>
     </main>
 </body>
 
