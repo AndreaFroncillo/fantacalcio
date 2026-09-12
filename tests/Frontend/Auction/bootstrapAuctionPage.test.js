@@ -3008,3 +3008,229 @@ test('it disables bid controls while bid request is pending', async () => {
         ]
     );
 });
+
+test('it updates auction ui after placing bid and receiving realtime bid event', async () => {
+    let clickListener = null;
+
+    const listeners = {};
+
+    const currentBidElement = {
+        textContent: '',
+    };
+
+    const bidControlsElement = {
+        innerHTML: '',
+
+        addEventListener(eventName, listener) {
+            if (eventName === 'click') {
+                clickListener = listener;
+            }
+        },
+
+        querySelectorAll() {
+            return [];
+        },
+    };
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-current-bid]'
+            ) {
+                return currentBidElement;
+            }
+
+            if (
+                selector ===
+                '[data-auction-bid-controls]'
+            ) {
+                return bidControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    const channel = {
+        listen(eventName, callback) {
+            listeners[eventName] = callback;
+
+            return this;
+        },
+    };
+
+    const echo = {
+        private() {
+            return channel;
+        },
+
+        connector: {
+            pusher: {
+                connection: {
+                    bind() { },
+                },
+            },
+        },
+    };
+
+    const snapshots = [
+        {
+            ulid: '01TESTAUCTIONULID',
+            status: 'live',
+
+            current_participant_ulid:
+                '01PARTICIPANT2',
+
+            active_role_phase: {
+                role: 'P',
+            },
+
+            active_nomination: {
+                ulid: '01NOMINATIONULID',
+                opening_price: 1,
+
+                current_bid: {
+                    amount: 25,
+                    participant_ulid:
+                        '01PARTICIPANT1',
+                },
+            },
+
+            participants: [],
+        },
+
+        {
+            ulid: '01TESTAUCTIONULID',
+            status: 'live',
+
+            current_participant_ulid:
+                '01PARTICIPANT2',
+
+            active_role_phase: {
+                role: 'P',
+            },
+
+            active_nomination: {
+                ulid: '01NOMINATIONULID',
+                opening_price: 1,
+
+                current_bid: {
+                    amount: 26,
+                    participant_ulid:
+                        '01PARTICIPANT2',
+                },
+            },
+
+            participants: [],
+        },
+    ];
+
+    const fetchCalls = [];
+
+    const originalFetch = global.fetch;
+
+    global.fetch = async (
+        url,
+        options = {}
+    ) => {
+        fetchCalls.push({
+            url,
+            options,
+        });
+
+        if (options.method === 'POST') {
+            return {
+                ok: true,
+
+                async json() {
+                    return {
+                        data: {
+                            ulid: '01BIDULID',
+                            amount: 26,
+                            sequence_number: 2,
+                        },
+                    };
+                },
+            };
+        }
+
+        return {
+            ok: true,
+
+            async json() {
+                return {
+                    data: snapshots.shift(),
+                };
+            },
+        };
+    };
+
+    try {
+        await bootstrapAuctionPage({
+            element,
+            echo,
+        });
+
+        assert.equal(
+            currentBidElement.textContent,
+            '25'
+        );
+
+        await clickListener({
+            target: {
+                dataset: {
+                    bidIncrement: '1',
+                },
+            },
+        });
+
+        assert.equal(
+            fetchCalls.length,
+            2
+        );
+
+        assert.equal(
+            fetchCalls[1].options.method,
+            'POST'
+        );
+
+        assert.equal(
+            currentBidElement.textContent,
+            '25'
+        );
+
+        await listeners['.auction.bid.placed']({
+            auction_ulid:
+                '01TESTAUCTIONULID',
+            nomination_ulid:
+                '01NOMINATIONULID',
+            bid_ulid:
+                '01BIDULID',
+            auction_participant_ulid:
+                '01PARTICIPANT2',
+            amount: 26,
+            sequence_number: 2,
+            placed_at:
+                '2026-09-12T10:00:00.000000Z',
+            expires_at:
+                '2026-09-12T10:00:10.000000Z',
+        });
+
+        assert.equal(
+            fetchCalls.length,
+            3
+        );
+
+        assert.equal(
+            currentBidElement.textContent,
+            '26'
+        );
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
