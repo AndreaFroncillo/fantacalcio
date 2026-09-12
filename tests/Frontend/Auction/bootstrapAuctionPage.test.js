@@ -207,3 +207,57 @@ test('it renders active nomination player after loading snapshot', async () => {
         'Mario Rossi'
     );
 });
+
+test('it renders current bid amount after loading snapshot', async () => {
+    const currentBidElement = {
+        textContent: '',
+    };
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (selector === '[data-auction-current-bid]') {
+                return currentBidElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        async loadSnapshot() {
+            return {
+                ulid: '01TESTAUCTIONULID',
+                status: 'active',
+
+                active_nomination: {
+                    ulid: '01TESTNOMINATION',
+
+                    current_bid: {
+                        ulid: '01TESTBID',
+                        amount: 25,
+                        sequence_number: 3,
+                        participant_ulid: '01TESTPARTICIPANT',
+                        placed_at: '2026-09-12T20:00:00.000000Z',
+                    },
+                },
+            };
+        }
+
+        subscribe() {}
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.equal(
+        currentBidElement.textContent,
+        '25'
+    );
+});

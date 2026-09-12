@@ -30,6 +30,11 @@
             Giocatore:
             <span data-auction-player></span>
         </p>
+
+        <p>
+            Offerta corrente:
+            <span data-auction-current-bid></span>
+        </p>
     </main>
 </body>
 

@@ -40,6 +40,21 @@ export async function bootstrapAuctionPage({
             snapshot.active_nomination?.player?.display_name ?? '';
     }
 
+    const currentBidElement = element.querySelector(
+        '[data-auction-current-bid]'
+    );
+
+    if (currentBidElement) {
+        const currentBidAmount =
+            snapshot.active_nomination?.current_bid?.amount;
+
+        currentBidElement.textContent =
+            currentBidAmount !== undefined &&
+                currentBidAmount !== null
+                ? String(currentBidAmount)
+                : '';
+    }
+
     client.subscribe();
 
     return client;
