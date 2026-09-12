@@ -45,6 +45,8 @@
             <h2>Offerte</h2>
 
             <div data-auction-bid-controls></div>
+
+            <p data-auction-bid-error></p>
         </section>
 
         <section>

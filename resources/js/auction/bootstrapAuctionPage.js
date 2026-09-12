@@ -184,6 +184,10 @@ export async function bootstrapAuctionPage({
         );
     }
 
+    const bidErrorElement = element.querySelector(
+        '[data-auction-bid-error]'
+    );
+
     const bidControlsElement = element.querySelector(
         '[data-auction-bid-controls]'
     );
@@ -242,10 +246,19 @@ export async function bootstrapAuctionPage({
                             increment
                         );
 
-                await client.placeBid(
-                    activeNomination.ulid,
-                    amount
-                );
+                try {
+                    await client.placeBid(
+                        activeNomination.ulid,
+                        amount
+                    );
+                } catch (error) {
+                    if (bidErrorElement) {
+                        bidErrorElement.textContent =
+                            error instanceof Error
+                                ? error.message
+                                : 'Unable to place auction bid.';
+                    }
+                }
             }
         );
     }
