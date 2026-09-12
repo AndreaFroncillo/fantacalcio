@@ -69,12 +69,24 @@ export async function bootstrapAuctionPage({
                         const team =
                             participant.team;
 
+                        const isCurrentNominator =
+                            snapshot.active_nomination
+                                ?.nominator
+                                ?.ulid === participant.ulid;
+
                         return `
-                    <div>
-                        <span>${team.name}</span>
-                        <span>${team.current_balance}</span>
-                    </div>
-                `;
+                <div>
+                    <span>${team.name}</span>
+                    <span>${team.current_balance}</span>
+                    <span>
+                        Posizione ${participant.nomination_position}
+                    </span>
+                    ${isCurrentNominator
+                                ? '<span>Nominatore corrente</span>'
+                                : ''
+                            }
+                </div>
+            `;
                     })
                     .join('');
         }

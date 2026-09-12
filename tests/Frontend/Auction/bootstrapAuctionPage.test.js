@@ -997,3 +997,106 @@ test('it updates participant balance when snapshot changes', async () => {
         /420/
     );
 });
+
+test('it renders participant nomination position and current nominator', async () => {
+    const participantsElement = {
+        innerHTML: '',
+    };
+
+    let snapshotListener = null;
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-participants]'
+            ) {
+                return participantsElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_role_phase: {
+                    role: 'P',
+                },
+
+                active_nomination: {
+                    nominator: {
+                        ulid: '01PARTICIPANT2',
+                        nomination_position: 2,
+                    },
+                },
+
+                participants: [
+                    {
+                        ulid: '01PARTICIPANT1',
+                        nomination_position: 1,
+
+                        team: {
+                            ulid: '01TEAM1',
+                            name: 'Team Alpha',
+                            short_name: 'ALP',
+                            current_balance: 420,
+                        },
+                    },
+
+                    {
+                        ulid: '01PARTICIPANT2',
+                        nomination_position: 2,
+
+                        team: {
+                            ulid: '01TEAM2',
+                            name: 'Team Beta',
+                            short_name: 'BET',
+                            current_balance: 365,
+                        },
+                    },
+                ],
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.match(
+        participantsElement.innerHTML,
+        /Posizione 1/
+    );
+
+    assert.match(
+        participantsElement.innerHTML,
+        /Posizione 2/
+    );
+
+    assert.match(
+        participantsElement.innerHTML,
+        /Nominatore corrente/
+    );
+});
