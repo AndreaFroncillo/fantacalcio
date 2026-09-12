@@ -631,3 +631,167 @@ test('it clears nomination ui when snapshot has no active nomination', async () 
         ''
     );
 });
+
+test('it updates auction ui after realtime bid event reloads snapshot', async () => {
+    const originalFetch = global.fetch;
+
+    const listeners = {};
+
+    const currentBidElement = {
+        textContent: '',
+    };
+
+    const playerElement = {
+        textContent: '',
+    };
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-current-bid]'
+            ) {
+                return currentBidElement;
+            }
+
+            if (selector === '[data-auction-player]') {
+                return playerElement;
+            }
+
+            return null;
+        },
+    };
+
+    const channel = {
+        listen(eventName, callback) {
+            listeners[eventName] = callback;
+
+            return this;
+        },
+    };
+
+    const echo = {
+        private() {
+            return channel;
+        },
+
+        connector: {
+            pusher: {
+                connection: {
+                    bind() { },
+                },
+            },
+        },
+    };
+
+    const snapshots = [
+        {
+            ulid: '01TESTAUCTIONULID',
+            status: 'live',
+
+            active_role_phase: {
+                role: 'P',
+            },
+
+            active_nomination: {
+                player: {
+                    display_name: 'Mario Rossi',
+                },
+
+                current_bid: null,
+            },
+
+            participants: [],
+        },
+
+        {
+            ulid: '01TESTAUCTIONULID',
+            status: 'live',
+
+            active_role_phase: {
+                role: 'P',
+            },
+
+            active_nomination: {
+                player: {
+                    display_name: 'Mario Rossi',
+                },
+
+                current_bid: {
+                    amount: 25,
+                },
+            },
+
+            participants: [],
+        },
+    ];
+
+    let fetchCount = 0;
+
+    global.fetch = async () => ({
+        ok: true,
+
+        async json() {
+            return {
+                data: snapshots[fetchCount++],
+            };
+        },
+    });
+
+    try {
+        await bootstrapAuctionPage({
+            element,
+            echo,
+        });
+
+        assert.equal(
+            playerElement.textContent,
+            'Mario Rossi'
+        );
+
+        assert.equal(
+            currentBidElement.textContent,
+            ''
+        );
+
+        assert.equal(
+            typeof listeners['.auction.bid.placed'],
+            'function'
+        );
+
+        await listeners['.auction.bid.placed']({
+            auction_ulid: '01TESTAUCTIONULID',
+            nomination_ulid: '01TESTNOMINATIONULID',
+            bid_ulid: '01TESTBIDULID',
+            auction_participant_ulid:
+                '01TESTPARTICIPANTULID',
+            amount: 25,
+            sequence_number: 1,
+            placed_at:
+                '2026-09-12T10:00:00.000000Z',
+            expires_at:
+                '2026-09-12T10:00:10.000000Z',
+        });
+
+        assert.equal(
+            fetchCount,
+            2
+        );
+
+        assert.equal(
+            playerElement.textContent,
+            'Mario Rossi'
+        );
+
+        assert.equal(
+            currentBidElement.textContent,
+            '25'
+        );
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
