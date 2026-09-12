@@ -69,11 +69,14 @@ export async function bootstrapAuctionPage({
     if (countdownElement) {
         client.setNominationCountdownListener(
             (remainingMilliseconds) => {
-                countdownElement.textContent = String(
-                    Math.ceil(
-                        remainingMilliseconds / 1000
-                    )
-                );
+                countdownElement.textContent =
+                    remainingMilliseconds > 0
+                        ? String(
+                            Math.ceil(
+                                remainingMilliseconds / 1000
+                            )
+                        )
+                        : '';
             }
         );
     }

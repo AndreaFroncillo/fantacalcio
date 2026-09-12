@@ -533,3 +533,101 @@ test('it renders initial snapshot only once', async () => {
         1
     );
 });
+
+test('it clears nomination ui when snapshot has no active nomination', async () => {
+    const playerElement = {
+        textContent: 'Mario Rossi',
+    };
+
+    const currentBidElement = {
+        textContent: '25',
+    };
+
+    const countdownElement = {
+        textContent: '6',
+    };
+
+    let snapshotListener = null;
+    let countdownListener = null;
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (selector === '[data-auction-player]') {
+                return playerElement;
+            }
+
+            if (selector === '[data-auction-current-bid]') {
+                return currentBidElement;
+            }
+
+            if (selector === '[data-auction-countdown]') {
+                return countdownElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener(listener) {
+            countdownListener = listener;
+        }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'active',
+                active_nomination: {
+                    player: {
+                        display_name: 'Mario Rossi',
+                    },
+                    current_bid: {
+                        amount: 25,
+                    },
+                },
+            };
+
+            snapshotListener(snapshot);
+            countdownListener(6000);
+
+            return snapshot;
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    snapshotListener({
+        status: 'active',
+        active_nomination: null,
+    });
+
+    countdownListener(0);
+
+    assert.equal(
+        playerElement.textContent,
+        ''
+    );
+
+    assert.equal(
+        currentBidElement.textContent,
+        ''
+    );
+
+    assert.equal(
+        countdownElement.textContent,
+        ''
+    );
+});
