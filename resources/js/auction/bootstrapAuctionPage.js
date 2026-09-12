@@ -83,7 +83,10 @@ export async function bootstrapAuctionPage({
                 participants
                     .map((participant) => {
                         const team =
-                            participant.team;
+                            participant.team ?? {
+                                name: 'Squadra non disponibile',
+                                current_balance: '',
+                            };
 
                         const isCurrentNominator =
                             snapshot.active_nomination
@@ -96,22 +99,22 @@ export async function bootstrapAuctionPage({
                                 ?.participant_ulid === participant.ulid;
 
                         return `
-                    <div>
-                        <span>${escapeHtml(team.name)}</span>
-                        <span>${team.current_balance}</span>
-                        <span>
-                            Posizione ${participant.nomination_position}
-                        </span>
-                        ${isCurrentNominator
+                <div>
+                    <span>${escapeHtml(team.name)}</span>
+                    <span>${team.current_balance}</span>
+                    <span>
+                        Posizione ${participant.nomination_position}
+                    </span>
+                    ${isCurrentNominator
                                 ? '<span>Nominatore corrente</span>'
                                 : ''
                             }
-                        ${isCurrentHighestBidder
+                    ${isCurrentHighestBidder
                                 ? '<span>Miglior offerente</span>'
                                 : ''
                             }
-                    </div>
-                `;
+                </div>
+            `;
                     })
                     .join('');
         }

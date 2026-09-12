@@ -1632,3 +1632,71 @@ test('it escapes participant team name html', async () => {
         /&lt;script&gt;/
     );
 });
+
+test('it handles participant without team', async () => {
+    const participantsElement = {
+        innerHTML: '',
+    };
+
+    let snapshotListener = null;
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-participants]'
+            ) {
+                return participantsElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+                active_role_phase: null,
+                active_nomination: null,
+
+                participants: [
+                    {
+                        ulid: '01PARTICIPANT1',
+                        nomination_position: 1,
+                        team: null,
+                    },
+                ],
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        subscribe() { }
+    }
+
+    await assert.doesNotReject(async () => {
+        await bootstrapAuctionPage({
+            element,
+            echo: {},
+            AuctionClientClass: FakeAuctionClient,
+        });
+    });
+
+    assert.match(
+        participantsElement.innerHTML,
+        /Squadra non disponibile/
+    );
+});
