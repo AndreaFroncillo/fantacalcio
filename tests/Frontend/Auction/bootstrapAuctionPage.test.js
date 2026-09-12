@@ -895,3 +895,105 @@ test('it renders auction participants with team balance', async () => {
         /365/
     );
 });
+
+test('it updates participant balance when snapshot changes', async () => {
+    const participantsElement = {
+        innerHTML: '',
+    };
+
+    let snapshotListener = null;
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-participants]'
+            ) {
+                return participantsElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+                active_role_phase: null,
+                active_nomination: null,
+
+                participants: [
+                    {
+                        ulid: '01PARTICIPANT1',
+                        nomination_position: 1,
+
+                        team: {
+                            ulid: '01TEAM1',
+                            name: 'Team Alpha',
+                            short_name: 'ALP',
+                            current_balance: 420,
+                        },
+                    },
+                ],
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.match(
+        participantsElement.innerHTML,
+        /420/
+    );
+
+    snapshotListener({
+        status: 'live',
+        active_role_phase: null,
+        active_nomination: null,
+
+        participants: [
+            {
+                ulid: '01PARTICIPANT1',
+                nomination_position: 1,
+
+                team: {
+                    ulid: '01TEAM1',
+                    name: 'Team Alpha',
+                    short_name: 'ALP',
+                    current_balance: 395,
+                },
+            },
+        ],
+    });
+
+    assert.match(
+        participantsElement.innerHTML,
+        /395/
+    );
+
+    assert.doesNotMatch(
+        participantsElement.innerHTML,
+        /420/
+    );
+});
