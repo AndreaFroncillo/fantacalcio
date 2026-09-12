@@ -25,6 +25,11 @@
             Ruolo:
             <span data-auction-role></span>
         </p>
+
+        <p>
+            Giocatore:
+            <span data-auction-player></span>
+        </p>
     </main>
 </body>
 

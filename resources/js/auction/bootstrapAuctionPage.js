@@ -31,6 +31,15 @@ export async function bootstrapAuctionPage({
             snapshot.active_role_phase?.role ?? '';
     }
 
+    const playerElement = element.querySelector(
+        '[data-auction-player]'
+    );
+
+    if (playerElement) {
+        playerElement.textContent =
+            snapshot.active_nomination?.player?.display_name ?? '';
+    }
+
     client.subscribe();
 
     return client;

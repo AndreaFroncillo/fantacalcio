@@ -158,3 +158,52 @@ test('it renders active role phase after loading snapshot', async () => {
         'P'
     );
 });
+
+test('it renders active nomination player after loading snapshot', async () => {
+    const playerElement = {
+        textContent: '',
+    };
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (selector === '[data-auction-player]') {
+                return playerElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        async loadSnapshot() {
+            return {
+                ulid: '01TESTAUCTIONULID',
+                status: 'active',
+
+                active_nomination: {
+                    ulid: '01TESTNOMINATION',
+                    player: {
+                        display_name: 'Mario Rossi',
+                    },
+                },
+            };
+        }
+
+        subscribe() {}
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.equal(
+        playerElement.textContent,
+        'Mario Rossi'
+    );
+});
