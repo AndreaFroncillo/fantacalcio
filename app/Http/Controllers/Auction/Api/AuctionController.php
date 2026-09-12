@@ -19,13 +19,16 @@ use App\Models\Auction\Auction;
 use App\Models\Auction\AuctionNomination;
 use App\Models\Auction\AuctionParticipant;
 use App\Models\Football\PlayerSeason;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use RuntimeException;
 
 class AuctionController extends Controller
 {
-    public function show(Auction $auction): AuctionResource
-    {
+    public function show(
+        Request $request,
+        Auction $auction
+    ): AuctionResource {
         Gate::authorize('view', $auction);
 
         $auction->load([
@@ -48,7 +51,24 @@ class AuctionController extends Controller
                 ->orderBy('nomination_position'),
         ]);
 
-        return new AuctionResource($auction);
+        $currentParticipant = AuctionParticipant::query()
+            ->where('auction_id', $auction->id)
+            ->whereHas(
+                'team.seasonParticipation.leagueMembership',
+                function ($query) use ($request) {
+                    $query->where(
+                        'user_id',
+                        $request->user()->id
+                    );
+                }
+            )
+            ->first();
+
+        $resource = new AuctionResource($auction);
+
+        $resource->currentParticipant = $currentParticipant;
+
+        return $resource;
     }
 
     public function initialize(

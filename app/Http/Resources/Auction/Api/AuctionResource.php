@@ -2,11 +2,14 @@
 
 namespace App\Http\Resources\Auction\Api;
 
+use App\Models\Auction\AuctionParticipant;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class AuctionResource extends JsonResource
 {
+    public ?AuctionParticipant $currentParticipant = null;
+
     public function toArray(Request $request): array
     {
         $activeRolePhase = $this->rolePhases->first();
@@ -19,6 +22,7 @@ class AuctionResource extends JsonResource
             'status' => $this->status->value,
             'base_timer_seconds' => $this->base_timer_seconds,
             'bid_extension_seconds' => $this->bid_extension_seconds,
+            'current_participant_ulid' => $this->currentParticipant?->ulid,
 
             'active_role_phase' => $activeRolePhase
                 ? [

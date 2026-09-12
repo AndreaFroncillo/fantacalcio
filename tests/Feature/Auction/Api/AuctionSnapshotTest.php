@@ -17,6 +17,7 @@ use App\Models\League\League;
 use App\Models\League\LeagueMembership;
 use App\Models\Market\MarketSession;
 use App\Models\Season\LeagueSeason;
+use App\Models\Season\SeasonParticipation;
 use App\Models\Team\Team;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -66,6 +67,80 @@ class AuctionSnapshotTest extends TestCase
                     'bid_extension_seconds' => 10,
                 ],
             ]);
+    }
+
+    public function test_auction_snapshot_includes_current_participant_ulid(): void
+    {
+        $auction = Auction::factory()->live()->create();
+
+        $leagueSeason = $auction
+            ->marketSession
+            ->leagueSeason;
+
+        $user = User::factory()->create();
+
+        $membership = LeagueMembership::factory()->create([
+            'league_id' => $leagueSeason->league_id,
+            'user_id' => $user->id,
+        ]);
+
+        $participation = SeasonParticipation::factory()->create([
+            'league_season_id' => $leagueSeason->id,
+            'league_membership_id' => $membership->id,
+        ]);
+
+        $team = Team::factory()->create([
+            'season_participation_id' => $participation->id,
+        ]);
+
+        TeamCreditAccount::factory()->create([
+            'team_id' => $team->id,
+            'current_balance' => 500,
+        ]);
+
+        $participant = AuctionParticipant::factory()->create([
+            'auction_id' => $auction->id,
+            'team_id' => $team->id,
+            'nomination_position' => 1,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->getJson("/api/auctions/{$auction->ulid}");
+
+        $response
+            ->assertOk()
+            ->assertJsonPath(
+                'data.current_participant_ulid',
+                $participant->ulid
+            );
+    }
+
+    public function test_auction_snapshot_has_null_current_participant_ulid_for_non_participant_member(): void
+    {
+        $auction = Auction::factory()->live()->create();
+
+        $leagueSeason = $auction
+            ->marketSession
+            ->leagueSeason;
+
+        $user = User::factory()->create();
+
+        LeagueMembership::factory()->create([
+            'league_id' => $leagueSeason->league_id,
+            'user_id' => $user->id,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->getJson("/api/auctions/{$auction->ulid}");
+
+        $response
+            ->assertOk()
+            ->assertJsonPath(
+                'data.current_participant_ulid',
+                null
+            );
     }
 
     public function test_unauthenticated_user_cannot_view_auction_snapshot(): void

@@ -211,6 +211,23 @@ export async function bootstrapAuctionPage({
                     return;
                 }
 
+                const currentParticipantUlid =
+                    currentSnapshot
+                        ?.current_participant_ulid;
+
+                const currentBidParticipantUlid =
+                    activeNomination
+                        .current_bid
+                        ?.participant_ulid;
+
+                if (
+                    currentParticipantUlid &&
+                    currentBidParticipantUlid ===
+                    currentParticipantUlid
+                ) {
+                    return;
+                }
+
                 const currentBidAmount =
                     activeNomination
                         .current_bid
