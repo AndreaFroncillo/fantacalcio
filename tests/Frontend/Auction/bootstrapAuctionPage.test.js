@@ -2185,3 +2185,123 @@ test('it places opening price from plus one when nomination has no current bid',
         ]
     );
 });
+
+test('it does not place bid after active nomination ends', async () => {
+    let clickListener = null;
+    let snapshotListener = null;
+
+    const bidControlsElement = {
+        innerHTML: '',
+
+        addEventListener(eventName, listener) {
+            if (eventName === 'click') {
+                clickListener = listener;
+            }
+        },
+    };
+
+    const calls = {
+        placeBid: [],
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_role_phase: {
+                    role: 'P',
+                },
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                    opening_price: 1,
+
+                    current_bid: {
+                        amount: 25,
+                        participant_ulid:
+                            '01PARTICIPANT1',
+                    },
+                },
+
+                participants: [],
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        async placeBid(
+            nominationUlid,
+            amount
+        ) {
+            calls.placeBid.push({
+                nominationUlid,
+                amount,
+            });
+        }
+
+        subscribe() { }
+    }
+
+    const element = {
+        dataset: {
+            auctionUlid:
+                '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-bid-controls]'
+            ) {
+                return bidControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    snapshotListener({
+        status: 'live',
+
+        active_role_phase: {
+            role: 'P',
+        },
+
+        active_nomination: null,
+
+        participants: [],
+    });
+
+    await clickListener({
+        target: {
+            dataset: {
+                bidIncrement: '1',
+            },
+        },
+    });
+
+    assert.deepEqual(
+        calls.placeBid,
+        []
+    );
+
+    assert.equal(
+        bidControlsElement.innerHTML,
+        ''
+    );
+});
