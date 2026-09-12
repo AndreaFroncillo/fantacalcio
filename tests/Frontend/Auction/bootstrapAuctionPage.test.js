@@ -1700,3 +1700,99 @@ test('it handles participant without team', async () => {
         /Squadra non disponibile/
     );
 });
+
+test('it renders bid increment controls for active nomination', async () => {
+    const bidControlsElement = {
+        innerHTML: '',
+    };
+
+    let snapshotListener = null;
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-bid-controls]'
+            ) {
+                return bidControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_role_phase: {
+                    role: 'P',
+                },
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+
+                    current_bid: {
+                        amount: 25,
+                        participant_ulid: '01PARTICIPANT1',
+                    },
+                },
+
+                participants: [],
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.match(
+        bidControlsElement.innerHTML,
+        /data-bid-increment="1"/
+    );
+
+    assert.match(
+        bidControlsElement.innerHTML,
+        /\+1/
+    );
+
+    assert.match(
+        bidControlsElement.innerHTML,
+        /data-bid-increment="5"/
+    );
+
+    assert.match(
+        bidControlsElement.innerHTML,
+        /\+5/
+    );
+
+    assert.match(
+        bidControlsElement.innerHTML,
+        /data-bid-increment="10"/
+    );
+
+    assert.match(
+        bidControlsElement.innerHTML,
+        /\+10/
+    );
+});

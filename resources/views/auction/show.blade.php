@@ -42,6 +42,12 @@
         </p>
 
         <section>
+            <h2>Offerte</h2>
+
+            <div data-auction-bid-controls></div>
+        </section>
+
+        <section>
             <h2>Partecipanti</h2>
 
             <div data-auction-participants></div>

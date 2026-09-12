@@ -118,6 +118,41 @@ export async function bootstrapAuctionPage({
                     })
                     .join('');
         }
+
+        const bidControlsElement = element.querySelector(
+            '[data-auction-bid-controls]'
+        );
+
+        if (bidControlsElement) {
+            if (!snapshot.active_nomination) {
+                bidControlsElement.innerHTML = '';
+
+                return;
+            }
+
+            bidControlsElement.innerHTML = `
+        <button
+            type="button"
+            data-bid-increment="1"
+        >
+            +1
+        </button>
+
+        <button
+            type="button"
+            data-bid-increment="5"
+        >
+            +5
+        </button>
+
+        <button
+            type="button"
+            data-bid-increment="10"
+        >
+            +10
+        </button>
+    `;
+        }
     };
 
     client.setSnapshotListener(
