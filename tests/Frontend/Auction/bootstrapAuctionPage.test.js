@@ -3687,3 +3687,1116 @@ test('it clears bid error when active nomination ends', async () => {
         ''
     );
 });
+
+test('it renders president nomination controls when permitted', async () => {
+    const presidentControlsElement = {
+        innerHTML: '',
+
+        addEventListener() { },
+    };
+
+    let snapshotListener = null;
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-president-controls]'
+            ) {
+                return presidentControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_role_phase: {
+                    role: 'P',
+                },
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+
+                    player: {
+                        display_name: 'Player One',
+                    },
+
+                    current_bid: null,
+                },
+
+                permissions: {
+                    can_confirm_nomination: true,
+                    can_reject_nomination: true,
+                },
+
+                participants: [],
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.match(
+        presidentControlsElement.innerHTML,
+        /Conferma/
+    );
+
+    assert.match(
+        presidentControlsElement.innerHTML,
+        /Rifiuta/
+    );
+});
+
+test('it does not render president nomination controls when not permitted', async () => {
+    const presidentControlsElement = {
+        innerHTML: '',
+
+        addEventListener() { },
+    };
+
+    let snapshotListener = null;
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-president-controls]'
+            ) {
+                return presidentControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                },
+
+                permissions: {
+                    can_confirm_nomination: false,
+                    can_reject_nomination: false,
+                },
+
+                participants: [],
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.doesNotMatch(
+        presidentControlsElement.innerHTML,
+        /Conferma/
+    );
+
+    assert.doesNotMatch(
+        presidentControlsElement.innerHTML,
+        /Rifiuta/
+    );
+});
+
+test('it clears president nomination controls when active nomination ends', async () => {
+    const presidentControlsElement = {
+        innerHTML: '',
+
+        addEventListener() { },
+    };
+
+    let snapshotListener = null;
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-president-controls]'
+            ) {
+                return presidentControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                },
+
+                permissions: {
+                    can_confirm_nomination: true,
+                    can_reject_nomination: true,
+                },
+
+                participants: [],
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.match(
+        presidentControlsElement.innerHTML,
+        /Conferma/
+    );
+
+    assert.match(
+        presidentControlsElement.innerHTML,
+        /Rifiuta/
+    );
+
+    snapshotListener({
+        status: 'live',
+
+        active_nomination: null,
+
+        permissions: {
+            can_confirm_nomination: true,
+            can_reject_nomination: true,
+        },
+
+        participants: [],
+    });
+
+    assert.equal(
+        presidentControlsElement.innerHTML,
+        ''
+    );
+});
+
+test('it confirms active nomination from president control', async () => {
+    let clickListener = null;
+
+    const presidentControlsElement = {
+        innerHTML: '',
+
+        addEventListener(eventName, listener) {
+            if (eventName === 'click') {
+                clickListener = listener;
+            }
+        },
+    };
+
+    const calls = {
+        confirmNomination: [],
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            this.snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                },
+
+                permissions: {
+                    can_confirm_nomination: true,
+                    can_reject_nomination: true,
+                },
+
+                participants: [],
+            };
+
+            this.snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        async confirmNomination(nominationUlid) {
+            calls.confirmNomination.push(
+                nominationUlid
+            );
+        }
+
+        subscribe() { }
+    }
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-president-controls]'
+            ) {
+                return presidentControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.ok(clickListener);
+
+    await clickListener({
+        target: {
+            dataset: {
+                auctionConfirmNomination: '',
+            },
+        },
+    });
+
+    assert.deepEqual(
+        calls.confirmNomination,
+        [
+            '01NOMINATIONULID',
+        ]
+    );
+});
+
+test('it rejects active nomination from president control', async () => {
+    let clickListener = null;
+
+    const presidentControlsElement = {
+        innerHTML: '',
+
+        addEventListener(eventName, listener) {
+            if (eventName === 'click') {
+                clickListener = listener;
+            }
+        },
+    };
+
+    const calls = {
+        rejectNomination: [],
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            this.snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                },
+
+                permissions: {
+                    can_confirm_nomination: true,
+                    can_reject_nomination: true,
+                },
+
+                participants: [],
+            };
+
+            this.snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        async rejectNomination(nominationUlid) {
+            calls.rejectNomination.push(
+                nominationUlid
+            );
+        }
+
+        subscribe() { }
+    }
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-president-controls]'
+            ) {
+                return presidentControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.ok(clickListener);
+
+    await clickListener({
+        target: {
+            dataset: {
+                auctionRejectNomination: '',
+            },
+        },
+    });
+
+    assert.deepEqual(
+        calls.rejectNomination,
+        [
+            '01NOMINATIONULID',
+        ]
+    );
+});
+
+test('it does not moderate nomination after active nomination ends', async () => {
+    let clickListener = null;
+    let snapshotListener = null;
+
+    const presidentControlsElement = {
+        innerHTML: '',
+
+        addEventListener(eventName, listener) {
+            if (eventName === 'click') {
+                clickListener = listener;
+            }
+        },
+    };
+
+    const calls = {
+        confirmNomination: [],
+        rejectNomination: [],
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                },
+
+                permissions: {
+                    can_confirm_nomination: true,
+                    can_reject_nomination: true,
+                },
+
+                participants: [],
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        async confirmNomination(nominationUlid) {
+            calls.confirmNomination.push(
+                nominationUlid
+            );
+        }
+
+        async rejectNomination(nominationUlid) {
+            calls.rejectNomination.push(
+                nominationUlid
+            );
+        }
+
+        subscribe() { }
+    }
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-president-controls]'
+            ) {
+                return presidentControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    snapshotListener({
+        status: 'live',
+
+        active_nomination: null,
+
+        permissions: {
+            can_confirm_nomination: true,
+            can_reject_nomination: true,
+        },
+
+        participants: [],
+    });
+
+    await clickListener({
+        target: {
+            dataset: {
+                auctionConfirmNomination: '',
+            },
+        },
+    });
+
+    await clickListener({
+        target: {
+            dataset: {
+                auctionRejectNomination: '',
+            },
+        },
+    });
+
+    assert.deepEqual(
+        calls.confirmNomination,
+        []
+    );
+
+    assert.deepEqual(
+        calls.rejectNomination,
+        []
+    );
+});
+
+test('it renders president error when confirming nomination fails', async () => {
+    let clickListener = null;
+
+    const presidentControlsElement = {
+        innerHTML: '',
+
+        addEventListener(eventName, listener) {
+            if (eventName === 'click') {
+                clickListener = listener;
+            }
+        },
+    };
+
+    const presidentErrorElement = {
+        textContent: '',
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            this.snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                },
+
+                permissions: {
+                    can_confirm_nomination: true,
+                    can_reject_nomination: true,
+                },
+
+                participants: [],
+            };
+
+            this.snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        async confirmNomination() {
+            throw new Error(
+                'Unable to confirm auction nomination (422).'
+            );
+        }
+
+        subscribe() { }
+    }
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-president-controls]'
+            ) {
+                return presidentControlsElement;
+            }
+
+            if (
+                selector ===
+                '[data-auction-president-error]'
+            ) {
+                return presidentErrorElement;
+            }
+
+            return null;
+        },
+    };
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    await clickListener({
+        target: {
+            dataset: {
+                auctionConfirmNomination: '',
+            },
+        },
+    });
+
+    assert.equal(
+        presidentErrorElement.textContent,
+        'Unable to confirm auction nomination (422).'
+    );
+});
+
+test('it renders president error when rejecting nomination fails', async () => {
+    let clickListener = null;
+
+    const presidentControlsElement = {
+        innerHTML: '',
+
+        addEventListener(eventName, listener) {
+            if (eventName === 'click') {
+                clickListener = listener;
+            }
+        },
+    };
+
+    const presidentErrorElement = {
+        textContent: '',
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            this.snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                },
+
+                permissions: {
+                    can_confirm_nomination: true,
+                    can_reject_nomination: true,
+                },
+
+                participants: [],
+            };
+
+            this.snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        async rejectNomination() {
+            throw new Error(
+                'Unable to reject auction nomination (422).'
+            );
+        }
+
+        subscribe() { }
+    }
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-president-controls]'
+            ) {
+                return presidentControlsElement;
+            }
+
+            if (
+                selector ===
+                '[data-auction-president-error]'
+            ) {
+                return presidentErrorElement;
+            }
+
+            return null;
+        },
+    };
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    await clickListener({
+        target: {
+            dataset: {
+                auctionRejectNomination: '',
+            },
+        },
+    });
+
+    assert.equal(
+        presidentErrorElement.textContent,
+        'Unable to reject auction nomination (422).'
+    );
+});
+
+test('it clears previous president error before moderating nomination', async () => {
+    let clickListener = null;
+
+    const presidentControlsElement = {
+        innerHTML: '',
+
+        addEventListener(eventName, listener) {
+            if (eventName === 'click') {
+                clickListener = listener;
+            }
+        },
+    };
+
+    const presidentErrorElement = {
+        textContent: 'Previous error',
+    };
+
+    let resolveConfirm;
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            this.snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                },
+
+                permissions: {
+                    can_confirm_nomination: true,
+                    can_reject_nomination: true,
+                },
+
+                participants: [],
+            };
+
+            this.snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        async confirmNomination() {
+            return new Promise((resolve) => {
+                resolveConfirm = resolve;
+            });
+        }
+
+        subscribe() { }
+    }
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-president-controls]'
+            ) {
+                return presidentControlsElement;
+            }
+
+            if (
+                selector ===
+                '[data-auction-president-error]'
+            ) {
+                return presidentErrorElement;
+            }
+
+            return null;
+        },
+    };
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    const moderationPromise = clickListener({
+        target: {
+            dataset: {
+                auctionConfirmNomination: '',
+            },
+        },
+    });
+
+    assert.equal(
+        presidentErrorElement.textContent,
+        ''
+    );
+
+    resolveConfirm();
+
+    await moderationPromise;
+});
+
+test('it prevents duplicate president moderation while request is pending', async () => {
+    let clickListener = null;
+
+    const presidentControlsElement = {
+        innerHTML: '',
+
+        addEventListener(eventName, listener) {
+            if (eventName === 'click') {
+                clickListener = listener;
+            }
+        },
+    };
+
+    let resolveConfirm;
+
+    const pendingConfirmation = new Promise((resolve) => {
+        resolveConfirm = resolve;
+    });
+
+    const calls = {
+        confirmNomination: [],
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            this.snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                },
+
+                permissions: {
+                    can_confirm_nomination: true,
+                    can_reject_nomination: true,
+                },
+
+                participants: [],
+            };
+
+            this.snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        async confirmNomination(nominationUlid) {
+            calls.confirmNomination.push(
+                nominationUlid
+            );
+
+            return pendingConfirmation;
+        }
+
+        subscribe() { }
+    }
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-president-controls]'
+            ) {
+                return presidentControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    const firstModerationPromise = clickListener({
+        target: {
+            dataset: {
+                auctionConfirmNomination: '',
+            },
+        },
+    });
+
+    const secondModerationPromise = clickListener({
+        target: {
+            dataset: {
+                auctionConfirmNomination: '',
+            },
+        },
+    });
+
+    assert.deepEqual(
+        calls.confirmNomination,
+        [
+            '01NOMINATIONULID',
+        ]
+    );
+
+    resolveConfirm();
+
+    await Promise.all([
+        firstModerationPromise,
+        secondModerationPromise,
+    ]);
+});
+
+test('it disables president controls while moderation request is pending', async () => {
+    let clickListener = null;
+
+    const confirmButton = {
+        disabled: false,
+    };
+
+    const rejectButton = {
+        disabled: false,
+    };
+
+    const presidentControlsElement = {
+        innerHTML: '',
+
+        addEventListener(eventName, listener) {
+            if (eventName === 'click') {
+                clickListener = listener;
+            }
+        },
+
+        querySelectorAll(selector) {
+            if (
+                selector ===
+                '[data-auction-confirm-nomination], [data-auction-reject-nomination]'
+            ) {
+                return [
+                    confirmButton,
+                    rejectButton,
+                ];
+            }
+
+            return [];
+        },
+    };
+
+    let resolveConfirm;
+
+    const pendingConfirmation = new Promise((resolve) => {
+        resolveConfirm = resolve;
+    });
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            this.snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                },
+
+                permissions: {
+                    can_confirm_nomination: true,
+                    can_reject_nomination: true,
+                },
+
+                participants: [],
+            };
+
+            this.snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        async confirmNomination() {
+            return pendingConfirmation;
+        }
+
+        subscribe() { }
+    }
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-president-controls]'
+            ) {
+                return presidentControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    const moderationPromise = clickListener({
+        target: {
+            dataset: {
+                auctionConfirmNomination: '',
+            },
+        },
+    });
+
+    assert.equal(
+        confirmButton.disabled,
+        true
+    );
+
+    assert.equal(
+        rejectButton.disabled,
+        true
+    );
+
+    resolveConfirm();
+
+    await moderationPromise;
+
+    assert.equal(
+        confirmButton.disabled,
+        false
+    );
+
+    assert.equal(
+        rejectButton.disabled,
+        false
+    );
+});

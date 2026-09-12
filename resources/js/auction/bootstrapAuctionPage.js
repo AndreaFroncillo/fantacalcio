@@ -16,6 +16,8 @@ export async function bootstrapAuctionPage({
 
     let isBidPending = false;
 
+    let isPresidentModerationPending = false;
+
     const escapeHtml = (value) => {
         return String(value)
             .replaceAll('&', '&amp;')
@@ -184,6 +186,35 @@ export async function bootstrapAuctionPage({
         </button>
     `;
         }
+
+        const presidentControlsElement = element.querySelector(
+            '[data-auction-president-controls]'
+        );
+
+        if (presidentControlsElement) {
+            if (!snapshot.active_nomination) {
+                presidentControlsElement.innerHTML = '';
+            } else {
+                const canConfirm =
+                    snapshot.permissions
+                        ?.can_confirm_nomination === true;
+
+                const canReject =
+                    snapshot.permissions
+                        ?.can_reject_nomination === true;
+
+                presidentControlsElement.innerHTML = `
+            ${canConfirm
+                        ? '<button type="button" data-auction-confirm-nomination>Conferma</button>'
+                        : ''
+                    }
+            ${canReject
+                        ? '<button type="button" data-auction-reject-nomination>Rifiuta</button>'
+                        : ''
+                    }
+        `;
+            }
+        }
     };
 
     client.setSnapshotListener(
@@ -314,6 +345,92 @@ export async function bootstrapAuctionPage({
                     });
 
                     isBidPending = false;
+                }
+            }
+        );
+    }
+
+    const presidentErrorElement = element.querySelector(
+        '[data-auction-president-error]'
+    );
+
+    const presidentControlsElement = element.querySelector(
+        '[data-auction-president-controls]'
+    );
+
+    if (presidentControlsElement) {
+        presidentControlsElement.addEventListener(
+            'click',
+            async (event) => {
+                const isConfirmAction =
+                    event.target
+                        ?.dataset
+                        ?.auctionConfirmNomination !== undefined;
+
+                const isRejectAction =
+                    event.target
+                        ?.dataset
+                        ?.auctionRejectNomination !== undefined;
+
+                if (
+                    !isConfirmAction &&
+                    !isRejectAction
+                ) {
+                    return;
+                }
+
+                if (isPresidentModerationPending) {
+                    return;
+                }
+
+                const activeNomination =
+                    currentSnapshot
+                        ?.active_nomination;
+
+                if (!activeNomination) {
+                    return;
+                }
+
+                if (presidentErrorElement) {
+                    presidentErrorElement.textContent = '';
+                }
+
+                const presidentButtons =
+                    presidentControlsElement.querySelectorAll?.(
+                        '[data-auction-confirm-nomination], [data-auction-reject-nomination]'
+                    ) ?? [];
+
+                presidentButtons.forEach((button) => {
+                    button.disabled = true;
+                });
+
+                isPresidentModerationPending = true;
+
+                try {
+                    if (isConfirmAction) {
+                        await client.confirmNomination(
+                            activeNomination.ulid
+                        );
+
+                        return;
+                    }
+
+                    await client.rejectNomination(
+                        activeNomination.ulid
+                    );
+                } catch (error) {
+                    if (presidentErrorElement) {
+                        presidentErrorElement.textContent =
+                            error instanceof Error
+                                ? error.message
+                                : 'Unable to moderate auction nomination.';
+                    }
+                } finally {
+                    presidentButtons.forEach((button) => {
+                        button.disabled = false;
+                    });
+
+                    isPresidentModerationPending = false;
                 }
             }
         );
