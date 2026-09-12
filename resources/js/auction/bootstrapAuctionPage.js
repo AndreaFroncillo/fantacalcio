@@ -63,6 +63,13 @@ export async function bootstrapAuctionPage({
             const participants =
                 snapshot.participants ?? [];
 
+            if (participants.length === 0) {
+                participantsElement.innerHTML =
+                    '<p>Nessun partecipante</p>';
+
+                return;
+            }
+
             participantsElement.innerHTML =
                 participants
                     .map((participant) => {

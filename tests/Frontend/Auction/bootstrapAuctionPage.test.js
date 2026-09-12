@@ -1496,3 +1496,62 @@ test('it clears current highest bidder when nomination ends', async () => {
         /Nominatore corrente/
     );
 });
+
+test('it renders participants empty state when no participants exist', async () => {
+    const participantsElement = {
+        innerHTML: '',
+    };
+
+    let snapshotListener = null;
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-participants]'
+            ) {
+                return participantsElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'pending',
+                active_role_phase: null,
+                active_nomination: null,
+                participants: [],
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.match(
+        participantsElement.innerHTML,
+        /Nessun partecipante/
+    );
+});
