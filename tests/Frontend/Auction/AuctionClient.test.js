@@ -1561,3 +1561,79 @@ test('it unbinds realtime connection listener when client is destroyed', () => {
         boundCallback
     );
 });
+
+test('it can destroy auction client more than once safely', () => {
+    let clearIntervalCalls = 0;
+    let leaveCalls = 0;
+    let unbindCalls = 0;
+
+    const originalSetInterval = global.setInterval;
+    const originalClearInterval = global.clearInterval;
+
+    global.setInterval = () => 123;
+
+    global.clearInterval = () => {
+        clearIntervalCalls++;
+    };
+
+    const channel = {
+        listen() {
+            return this;
+        },
+    };
+
+    const connection = {
+        bind() { },
+
+        unbind() {
+            unbindCalls++;
+        },
+    };
+
+    const echo = {
+        private() {
+            return channel;
+        },
+
+        leave() {
+            leaveCalls++;
+        },
+
+        connector: {
+            pusher: {
+                connection,
+            },
+        },
+    };
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID',
+            echo
+        );
+
+        client.startNominationCountdown();
+        client.subscribe();
+
+        client.destroy();
+        client.destroy();
+
+        assert.equal(
+            clearIntervalCalls,
+            1
+        );
+
+        assert.equal(
+            leaveCalls,
+            1
+        );
+
+        assert.equal(
+            unbindCalls,
+            1
+        );
+    } finally {
+        global.setInterval = originalSetInterval;
+        global.clearInterval = originalClearInterval;
+    }
+});
