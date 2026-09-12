@@ -1864,3 +1864,231 @@ test('it fails when place bid response does not contain data', async () => {
         global.fetch = originalFetch;
     }
 });
+
+test('it confirms auction nomination through api', async () => {
+    const originalFetch = globalThis.fetch;
+    const requests = [];
+
+    globalThis.fetch = async (url, options = {}) => {
+        requests.push({
+            url,
+            options,
+        });
+
+        return {
+            ok: true,
+
+            async json() {
+                return {
+                    data: {
+                        ulid: '01NOMINATIONULID',
+                        status: 'completed',
+                        close_reason: 'president_confirmed',
+                    },
+                };
+            },
+        };
+    };
+
+    try {
+        const client = new AuctionClient(
+            '01AUCTIONULID'
+        );
+
+        const nomination =
+            await client.confirmNomination(
+                '01NOMINATIONULID'
+            );
+
+        assert.equal(requests.length, 1);
+
+        assert.equal(
+            requests[0].url,
+            '/api/auctions/01AUCTIONULID/nominations/01NOMINATIONULID/confirm'
+        );
+
+        assert.equal(
+            requests[0].options.method,
+            'POST'
+        );
+
+        assert.equal(
+            nomination.status,
+            'completed'
+        );
+
+        assert.equal(
+            nomination.close_reason,
+            'president_confirmed'
+        );
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test('it fails when confirm nomination request is not successful', async () => {
+    const originalFetch = globalThis.fetch;
+
+    globalThis.fetch = async () => ({
+        ok: false,
+        status: 422,
+    });
+
+    try {
+        const client = new AuctionClient(
+            '01AUCTIONULID'
+        );
+
+        await assert.rejects(
+            () =>
+                client.confirmNomination(
+                    '01NOMINATIONULID'
+                ),
+            /Unable to confirm auction nomination \(422\)\./
+        );
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test('it fails when confirm nomination response does not contain data', async () => {
+    const originalFetch = globalThis.fetch;
+
+    globalThis.fetch = async () => ({
+        ok: true,
+
+        async json() {
+            return {};
+        },
+    });
+
+    try {
+        const client = new AuctionClient(
+            '01AUCTIONULID'
+        );
+
+        await assert.rejects(
+            () =>
+                client.confirmNomination(
+                    '01NOMINATIONULID'
+                ),
+            /Auction nomination confirmation response does not contain data\./
+        );
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test('it rejects auction nomination through api', async () => {
+    const originalFetch = globalThis.fetch;
+    const requests = [];
+
+    globalThis.fetch = async (url, options = {}) => {
+        requests.push({
+            url,
+            options,
+        });
+
+        return {
+            ok: true,
+
+            async json() {
+                return {
+                    data: {
+                        ulid: '01NOMINATIONULID',
+                        status: 'rejected',
+                        close_reason: 'president_rejected',
+                    },
+                };
+            },
+        };
+    };
+
+    try {
+        const client = new AuctionClient(
+            '01AUCTIONULID'
+        );
+
+        const nomination =
+            await client.rejectNomination(
+                '01NOMINATIONULID'
+            );
+
+        assert.equal(requests.length, 1);
+
+        assert.equal(
+            requests[0].url,
+            '/api/auctions/01AUCTIONULID/nominations/01NOMINATIONULID/reject'
+        );
+
+        assert.equal(
+            requests[0].options.method,
+            'POST'
+        );
+
+        assert.equal(
+            nomination.status,
+            'rejected'
+        );
+
+        assert.equal(
+            nomination.close_reason,
+            'president_rejected'
+        );
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test('it fails when reject nomination request is not successful', async () => {
+    const originalFetch = globalThis.fetch;
+
+    globalThis.fetch = async () => ({
+        ok: false,
+        status: 422,
+    });
+
+    try {
+        const client = new AuctionClient(
+            '01AUCTIONULID'
+        );
+
+        await assert.rejects(
+            () =>
+                client.rejectNomination(
+                    '01NOMINATIONULID'
+                ),
+            /Unable to reject auction nomination \(422\)\./
+        );
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test('it fails when reject nomination response does not contain data', async () => {
+    const originalFetch = globalThis.fetch;
+
+    globalThis.fetch = async () => ({
+        ok: true,
+
+        async json() {
+            return {};
+        },
+    });
+
+    try {
+        const client = new AuctionClient(
+            '01AUCTIONULID'
+        );
+
+        await assert.rejects(
+            () =>
+                client.rejectNomination(
+                    '01NOMINATIONULID'
+                ),
+            /Auction nomination rejection response does not contain data\./
+        );
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});

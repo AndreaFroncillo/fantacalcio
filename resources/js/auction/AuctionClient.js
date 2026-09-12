@@ -95,6 +95,64 @@ export default class AuctionClient {
         return payload.data;
     }
 
+    async confirmNomination(nominationUlid) {
+        const response = await fetch(
+            `/api/auctions/${this.auctionUlid}/nominations/${nominationUlid}/confirm`,
+            {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                },
+                credentials: 'same-origin',
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                `Unable to confirm auction nomination (${response.status}).`
+            );
+        }
+
+        const payload = await response.json();
+
+        if (!payload?.data) {
+            throw new Error(
+                'Auction nomination confirmation response does not contain data.'
+            );
+        }
+
+        return payload.data;
+    }
+
+    async rejectNomination(nominationUlid) {
+        const response = await fetch(
+            `/api/auctions/${this.auctionUlid}/nominations/${nominationUlid}/reject`,
+            {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                },
+                credentials: 'same-origin',
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                `Unable to reject auction nomination (${response.status}).`
+            );
+        }
+
+        const payload = await response.json();
+
+        if (!payload?.data) {
+            throw new Error(
+                'Auction nomination rejection response does not contain data.'
+            );
+        }
+
+        return payload.data;
+    }
+
     subscribe() {
         if (!this.echo) {
             throw new Error('Echo instance is required.');
