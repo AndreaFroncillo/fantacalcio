@@ -256,6 +256,15 @@ export async function bootstrapAuctionPage({
                     bidErrorElement.textContent = '';
                 }
 
+                const bidButtons =
+                    bidControlsElement.querySelectorAll?.(
+                        '[data-bid-increment]'
+                    ) ?? [];
+
+                bidButtons.forEach((button) => {
+                    button.disabled = true;
+                });
+
                 isBidPending = true;
 
                 try {
@@ -271,6 +280,10 @@ export async function bootstrapAuctionPage({
                                 : 'Unable to place auction bid.';
                     }
                 } finally {
+                    bidButtons.forEach((button) => {
+                        button.disabled = false;
+                    });
+
                     isBidPending = false;
                 }
             }

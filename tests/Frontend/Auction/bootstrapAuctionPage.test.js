@@ -2865,3 +2865,146 @@ test('it prevents duplicate bid while previous bid is pending', async () => {
     await firstClickPromise;
     await secondClickPromise;
 });
+
+test('it disables bid controls while bid request is pending', async () => {
+    let clickListener = null;
+
+    const bidButtons = [
+        {
+            disabled: false,
+        },
+        {
+            disabled: false,
+        },
+        {
+            disabled: false,
+        },
+    ];
+
+    const bidControlsElement = {
+        innerHTML: '',
+
+        addEventListener(eventName, listener) {
+            if (eventName === 'click') {
+                clickListener = listener;
+            }
+        },
+
+        querySelectorAll(selector) {
+            if (
+                selector ===
+                '[data-bid-increment]'
+            ) {
+                return bidButtons;
+            }
+
+            return [];
+        },
+    };
+
+    let resolveBid = null;
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            this.snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                current_participant_ulid:
+                    '01PARTICIPANT2',
+
+                active_role_phase: {
+                    role: 'P',
+                },
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                    opening_price: 1,
+
+                    current_bid: {
+                        amount: 25,
+                        participant_ulid:
+                            '01PARTICIPANT1',
+                    },
+                },
+
+                participants: [],
+            };
+
+            this.snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        async placeBid() {
+            return new Promise((resolve) => {
+                resolveBid = resolve;
+            });
+        }
+
+        subscribe() { }
+    }
+
+    const element = {
+        dataset: {
+            auctionUlid:
+                '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-bid-controls]'
+            ) {
+                return bidControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    const clickPromise = clickListener({
+        target: {
+            dataset: {
+                bidIncrement: '1',
+            },
+        },
+    });
+
+    assert.deepEqual(
+        bidButtons.map(
+            (button) => button.disabled
+        ),
+        [
+            true,
+            true,
+            true,
+        ]
+    );
+
+    resolveBid();
+
+    await clickPromise;
+
+    assert.deepEqual(
+        bidButtons.map(
+            (button) => button.disabled
+        ),
+        [
+            false,
+            false,
+            false,
+        ]
+    );
+});
