@@ -1720,3 +1720,147 @@ test('it notifies when auction snapshot is loaded', async () => {
         global.fetch = originalFetch;
     }
 });
+
+test('it places a bid for an auction nomination', async () => {
+    const originalFetch = global.fetch;
+
+    let requestUrl = null;
+    let requestOptions = null;
+
+    global.fetch = async (url, options) => {
+        requestUrl = url;
+        requestOptions = options;
+
+        return {
+            ok: true,
+
+            async json() {
+                return {
+                    data: {
+                        ulid: '01BIDULID',
+                        amount: 26,
+                        sequence_number: 2,
+                    },
+                };
+            },
+        };
+    };
+
+    try {
+        const client = new AuctionClient(
+            '01AUCTIONULID'
+        );
+
+        const bid = await client.placeBid(
+            '01NOMINATIONULID',
+            26
+        );
+
+        assert.equal(
+            requestUrl,
+            '/api/auctions/01AUCTIONULID/nominations/01NOMINATIONULID/bids'
+        );
+
+        assert.equal(
+            requestOptions.method,
+            'POST'
+        );
+
+        assert.equal(
+            requestOptions.headers.Accept,
+            'application/json'
+        );
+
+        assert.equal(
+            requestOptions.headers['Content-Type'],
+            'application/json'
+        );
+
+        assert.equal(
+            requestOptions.credentials,
+            'same-origin'
+        );
+
+        assert.equal(
+            requestOptions.body,
+            JSON.stringify({
+                amount: 26,
+            })
+        );
+
+        assert.deepEqual(
+            bid,
+            {
+                ulid: '01BIDULID',
+                amount: 26,
+                sequence_number: 2,
+            }
+        );
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
+
+test('it fails when place bid request is not successful', async () => {
+    const originalFetch = global.fetch;
+
+    global.fetch = async () => {
+        return {
+            ok: false,
+            status: 422,
+        };
+    };
+
+    try {
+        const client = new AuctionClient(
+            '01AUCTIONULID'
+        );
+
+        await assert.rejects(
+            () =>
+                client.placeBid(
+                    '01NOMINATIONULID',
+                    26
+                ),
+            new Error(
+                'Unable to place auction bid (422).'
+            )
+        );
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
+
+test('it fails when place bid response does not contain data', async () => {
+    const originalFetch = global.fetch;
+
+    global.fetch = async () => {
+        return {
+            ok: true,
+            status: 200,
+
+            async json() {
+                return {};
+            },
+        };
+    };
+
+    try {
+        const client = new AuctionClient(
+            '01AUCTIONULID'
+        );
+
+        await assert.rejects(
+            () =>
+                client.placeBid(
+                    '01NOMINATIONULID',
+                    26
+                ),
+            new Error(
+                'Auction bid response does not contain data.'
+            )
+        );
+    } finally {
+        global.fetch = originalFetch;
+    }
+});

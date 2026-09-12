@@ -62,6 +62,39 @@ export default class AuctionClient {
         return this.loadSnapshot();
     }
 
+    async placeBid(nominationUlid, amount) {
+        const response = await fetch(
+            `/api/auctions/${this.auctionUlid}/nominations/${nominationUlid}/bids`,
+            {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    amount,
+                }),
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                `Unable to place auction bid (${response.status}).`
+            );
+        }
+
+        const payload = await response.json();
+
+        if (!payload.data) {
+            throw new Error(
+                'Auction bid response does not contain data.'
+            );
+        }
+
+        return payload.data;
+    }
+
     subscribe() {
         if (!this.echo) {
             throw new Error('Echo instance is required.');
