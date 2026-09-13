@@ -1,60 +1,27 @@
-<!DOCTYPE html>
-<html lang="it">
+<x-layouts.app>
+    <x-slot:title>
+        Asta Fantacalcio
+    </x-slot:title>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <div
+        data-auction-ulid="{{ $auction->ulid }}"
+        class="space-y-6">
+        <x-auction.header
+            :auction="$auction" />
 
-    <title>Asta Fantacalcio</title>
+        <x-auction.status />
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
+        <div class="grid gap-6 lg:grid-cols-2">
+            <x-auction.nomination-panel
+                :player-seasons="$playerSeasons" />
 
-<body>
-    <main data-auction-ulid="{{ $auction->ulid }}">
-        <h1>Asta</h1>
+            <x-auction.bid-panel />
+        </div>
 
-        <p>{{ $auction->ulid }}</p>
+        <div class="grid gap-6 lg:grid-cols-2">
+            <x-auction.participants />
 
-        <p>
-            Stato:
-            <span data-auction-status></span>
-        </p>
-
-        <p>
-            Ruolo:
-            <span data-auction-role></span>
-        </p>
-
-        <p>
-            Giocatore:
-            <span data-auction-player></span>
-        </p>
-
-        <p>
-            Offerta corrente:
-            <span data-auction-current-bid></span>
-        </p>
-
-        <p>
-            Timer:
-            <span data-auction-countdown></span>
-        </p>
-
-        <section>
-            <h2>Offerte</h2>
-
-            <div data-auction-bid-controls></div>
-
-            <p data-auction-bid-error></p>
-        </section>
-
-        <section>
-            <h2>Partecipanti</h2>
-
-            <div data-auction-participants></div>
-        </section>
-    </main>
-</body>
-
-</html>
+            <x-auction.president-controls />
+        </div>
+    </div>
+</x-layouts.app>
