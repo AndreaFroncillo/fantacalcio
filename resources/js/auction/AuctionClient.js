@@ -62,6 +62,49 @@ export default class AuctionClient {
         return this.loadSnapshot();
     }
 
+    async startNomination(playerSeasonUlid) {
+        const response = await fetch(
+            `/api/auctions/${this.auctionUlid}/nominations`,
+            {
+                method: 'POST',
+
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+
+                credentials: 'same-origin',
+
+                body: JSON.stringify({
+                    player_season_ulid: playerSeasonUlid,
+                }),
+            }
+        );
+
+        let payload = null;
+
+        try {
+            payload = await response.json();
+        } catch {
+            //
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                payload?.message ??
+                `Unable to start auction nomination (${response.status}).`
+            );
+        }
+
+        if (!payload?.data) {
+            throw new Error(
+                'Auction nomination response does not contain data.'
+            );
+        }
+
+        return payload.data;
+    }
+
     async placeBid(nominationUlid, amount) {
         const response = await fetch(
             `/api/auctions/${this.auctionUlid}/nominations/${nominationUlid}/bids`,

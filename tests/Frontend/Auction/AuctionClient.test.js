@@ -2092,3 +2092,80 @@ test('it fails when reject nomination response does not contain data', async () 
         globalThis.fetch = originalFetch;
     }
 });
+
+test('it starts an auction nomination', async () => {
+    const originalFetch = globalThis.fetch;
+
+    const calls = [];
+
+    globalThis.fetch = async (url, options) => {
+        calls.push({
+            url,
+            options,
+        });
+
+        return {
+            ok: true,
+
+            async json() {
+                return {
+                    data: {
+                        ulid: '01NOMINATIONULID',
+
+                        player: {
+                            player_season_ulid:
+                                '01PLAYERSEASONULID',
+                        },
+                    },
+                };
+            },
+        };
+    };
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID',
+            {}
+        );
+
+        const nomination =
+            await client.startNomination(
+                '01PLAYERSEASONULID'
+            );
+
+        assert.equal(
+            calls.length,
+            1
+        );
+
+        assert.equal(
+            calls[0].url,
+            '/api/auctions/01TESTAUCTIONULID/nominations'
+        );
+
+        assert.equal(
+            calls[0].options.method,
+            'POST'
+        );
+
+        assert.deepEqual(
+            JSON.parse(calls[0].options.body),
+            {
+                player_season_ulid:
+                    '01PLAYERSEASONULID',
+            }
+        );
+
+        assert.equal(
+            nomination.ulid,
+            '01NOMINATIONULID'
+        );
+
+        assert.equal(
+            nomination.player.player_season_ulid,
+            '01PLAYERSEASONULID'
+        );
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});

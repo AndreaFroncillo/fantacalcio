@@ -18,6 +18,8 @@ export async function bootstrapAuctionPage({
 
     let isPresidentModerationPending = false;
 
+    let isNominationPending = false;
+
     const escapeHtml = (value) => {
         return String(value)
             .replaceAll('&', '&amp;')
@@ -238,6 +240,72 @@ export async function bootstrapAuctionPage({
                             )
                         )
                         : '';
+            }
+        );
+    }
+
+    const nominationPlayerElement = element.querySelector(
+        '[data-auction-nomination-player]'
+    );
+
+    const startNominationButton = element.querySelector(
+        '[data-auction-start-nomination]'
+    );
+
+    const nominationErrorElement = element.querySelector(
+        '[data-auction-nomination-error]'
+    );
+
+    if (
+        nominationPlayerElement &&
+        startNominationButton
+    ) {
+        startNominationButton.addEventListener(
+            'click',
+            async () => {
+                if (isNominationPending) {
+                    return;
+                }
+
+                if (currentSnapshot?.active_nomination) {
+                    return;
+                }
+
+                const playerSeasonUlid =
+                    nominationPlayerElement.value;
+
+                if (!playerSeasonUlid) {
+                    return;
+                }
+
+                if (nominationErrorElement) {
+                    nominationErrorElement.textContent = '';
+                }
+
+                isNominationPending = true;
+
+                startNominationButton.disabled = true;
+                nominationPlayerElement.disabled = true;
+
+                try {
+                    await client.startNomination(
+                        playerSeasonUlid
+                    );
+
+                    await client.loadSnapshot();
+                } catch (error) {
+                    if (nominationErrorElement) {
+                        nominationErrorElement.textContent =
+                            error instanceof Error
+                                ? error.message
+                                : 'Unable to start auction nomination.';
+                    }
+                } finally {
+                    startNominationButton.disabled = false;
+                    nominationPlayerElement.disabled = false;
+
+                    isNominationPending = false;
+                }
             }
         );
     }
