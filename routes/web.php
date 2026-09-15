@@ -2,12 +2,33 @@
 
 use App\Models\Auction\Auction;
 use App\Models\Football\PlayerSeason;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::post('/locale/{locale}', function (string $locale) {
+    abort_unless(
+        in_array($locale, ['it', 'en'], true),
+        404
+    );
+
+    session()->put(
+        'locale',
+        $locale
+    );
+
+    Cookie::queue(
+        'locale',
+        $locale,
+        60 * 24 * 365
+    );
+
+    return back();
+})->name('locale.update');
 
 Route::get('/dashboard', function () {
     return view('dashboard');

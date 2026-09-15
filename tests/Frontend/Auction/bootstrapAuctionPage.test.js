@@ -4800,3 +4800,115 @@ test('it disables president controls while moderation request is pending', async
         false
     );
 });
+
+test('it clears bid and president controls when active nomination ends', async () => {
+    const bidControlsElement = {
+        innerHTML: '',
+
+        addEventListener() { },
+    };
+
+    const presidentControlsElement = {
+        innerHTML: '',
+
+        addEventListener() { },
+    };
+
+    let snapshotListener = null;
+
+    const element = {
+        dataset: {
+            auctionUlid: '01TESTAUCTIONULID',
+        },
+
+        querySelector(selector) {
+            if (
+                selector ===
+                '[data-auction-bid-controls]'
+            ) {
+                return bidControlsElement;
+            }
+
+            if (
+                selector ===
+                '[data-auction-president-controls]'
+            ) {
+                return presidentControlsElement;
+            }
+
+            return null;
+        },
+    };
+
+    class FakeAuctionClient {
+        setSnapshotListener(listener) {
+            snapshotListener = listener;
+        }
+
+        setNominationCountdownListener() { }
+
+        async loadSnapshot() {
+            const snapshot = {
+                status: 'live',
+
+                active_nomination: {
+                    ulid: '01NOMINATIONULID',
+                    current_bid: null,
+                },
+
+                current_participant_ulid:
+                    '01PARTICIPANTULID',
+
+                permissions: {
+                    can_confirm_nomination: true,
+                    can_reject_nomination: true,
+                },
+
+                participants: [],
+            };
+
+            snapshotListener(snapshot);
+
+            return snapshot;
+        }
+
+        subscribe() { }
+    }
+
+    await bootstrapAuctionPage({
+        element,
+        echo: {},
+        AuctionClientClass: FakeAuctionClient,
+    });
+
+    assert.match(
+        presidentControlsElement.innerHTML,
+        /Conferma/
+    );
+
+    snapshotListener({
+        status: 'live',
+
+        active_nomination: null,
+
+        current_participant_ulid:
+            '01PARTICIPANTULID',
+
+        permissions: {
+            can_confirm_nomination: true,
+            can_reject_nomination: true,
+        },
+
+        participants: [],
+    });
+
+    assert.equal(
+        bidControlsElement.innerHTML,
+        ''
+    );
+
+    assert.equal(
+        presidentControlsElement.innerHTML,
+        ''
+    );
+});

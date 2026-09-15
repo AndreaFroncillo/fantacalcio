@@ -1932,6 +1932,12 @@ test('it fails when confirm nomination request is not successful', async () => {
     globalThis.fetch = async () => ({
         ok: false,
         status: 422,
+
+        async json() {
+            return {
+                message: 'Auction nomination cannot be confirmed.',
+            };
+        },
     });
 
     try {
@@ -1944,7 +1950,7 @@ test('it fails when confirm nomination request is not successful', async () => {
                 client.confirmNomination(
                     '01NOMINATIONULID'
                 ),
-            /Unable to confirm auction nomination \(422\)\./
+            /Auction nomination cannot be confirmed\./
         );
     } finally {
         globalThis.fetch = originalFetch;
@@ -2046,6 +2052,12 @@ test('it fails when reject nomination request is not successful', async () => {
     globalThis.fetch = async () => ({
         ok: false,
         status: 422,
+
+        async json() {
+            return {
+                message: 'Auction nomination cannot be rejected.',
+            };
+        },
     });
 
     try {
@@ -2058,7 +2070,7 @@ test('it fails when reject nomination request is not successful', async () => {
                 client.rejectNomination(
                     '01NOMINATIONULID'
                 ),
-            /Unable to reject auction nomination \(422\)\./
+            /Auction nomination cannot be rejected\./
         );
     } finally {
         globalThis.fetch = originalFetch;
@@ -2167,5 +2179,228 @@ test('it starts an auction nomination', async () => {
         );
     } finally {
         globalThis.fetch = originalFetch;
+    }
+});
+
+test('it resyncs auction snapshot when nomination countdown expires', async () => {
+    const originalSetInterval = global.setInterval;
+    const originalClearInterval = global.clearInterval;
+    const originalDateNow = Date.now;
+
+    let intervalCallback = null;
+    let resyncCalls = 0;
+
+    global.setInterval = (callback) => {
+        intervalCallback = callback;
+
+        return 123;
+    };
+
+    global.clearInterval = () => { };
+
+    Date.now = () =>
+        new Date(
+            '2026-09-11T20:00:10.000Z'
+        ).getTime();
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID'
+        );
+
+        client.state = {
+            ulid: '01TESTAUCTIONULID',
+            status: 'live',
+            active_nomination: {
+                ulid: '01TESTNOMINATIONULID',
+                expires_at:
+                    '2026-09-11T20:00:10.000Z',
+            },
+        };
+
+        client.resync = async () => {
+            resyncCalls++;
+        };
+
+        client.startNominationCountdown();
+
+        await intervalCallback();
+
+        assert.equal(
+            resyncCalls,
+            1
+        );
+    } finally {
+        global.setInterval = originalSetInterval;
+        global.clearInterval = originalClearInterval;
+        Date.now = originalDateNow;
+    }
+});
+
+test('it handles countdown expiry resync failure without unhandled rejection', async () => {
+    const originalSetInterval = global.setInterval;
+    const originalClearInterval = global.clearInterval;
+    const originalDateNow = Date.now;
+
+    let intervalCallback = null;
+
+    global.setInterval = (callback) => {
+        intervalCallback = callback;
+
+        return 123;
+    };
+
+    global.clearInterval = () => { };
+
+    Date.now = () =>
+        new Date(
+            '2026-09-11T20:00:10.000Z'
+        ).getTime();
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID'
+        );
+
+        client.state = {
+            ulid: '01TESTAUCTIONULID',
+            status: 'live',
+            active_nomination: {
+                ulid: '01TESTNOMINATIONULID',
+                expires_at:
+                    '2026-09-11T20:00:10.000Z',
+            },
+        };
+
+        client.resync = async () => {
+            throw new Error('Resync failed.');
+        };
+
+        client.startNominationCountdown();
+
+        await assert.doesNotReject(
+            async () => {
+                await intervalCallback();
+            }
+        );
+    } finally {
+        global.setInterval = originalSetInterval;
+        global.clearInterval = originalClearInterval;
+        Date.now = originalDateNow;
+    }
+});
+
+test('it schedules another resync when expired nomination is still active', async () => {
+    const originalSetInterval = global.setInterval;
+    const originalClearInterval = global.clearInterval;
+    const originalSetTimeout = global.setTimeout;
+    const originalClearTimeout = global.clearTimeout;
+    const originalDateNow = Date.now;
+
+    let intervalCallback = null;
+    let timeoutCallback = null;
+    let resyncCalls = 0;
+
+    global.setInterval = (callback) => {
+        intervalCallback = callback;
+
+        return 123;
+    };
+
+    global.clearInterval = () => { };
+
+    global.setTimeout = (callback) => {
+        timeoutCallback = callback;
+
+        return 456;
+    };
+
+    global.clearTimeout = () => { };
+
+    Date.now = () =>
+        new Date(
+            '2026-09-11T20:00:10.000Z'
+        ).getTime();
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID'
+        );
+
+        client.state = {
+            ulid: '01TESTAUCTIONULID',
+            status: 'live',
+
+            active_nomination: {
+                ulid: '01TESTNOMINATIONULID',
+                expires_at:
+                    '2026-09-11T20:00:10.000Z',
+            },
+        };
+
+        client.resync = async () => {
+            resyncCalls++;
+
+            return client.state;
+        };
+
+        client.startNominationCountdown();
+
+        await intervalCallback();
+
+        assert.equal(
+            resyncCalls,
+            1
+        );
+
+        assert.equal(
+            typeof timeoutCallback,
+            'function'
+        );
+
+        await timeoutCallback();
+
+        assert.equal(
+            resyncCalls,
+            2
+        );
+    } finally {
+        global.setInterval = originalSetInterval;
+        global.clearInterval = originalClearInterval;
+        global.setTimeout = originalSetTimeout;
+        global.clearTimeout = originalClearTimeout;
+        Date.now = originalDateNow;
+    }
+});
+
+test('it cancels nomination expiry resync timeout when client is destroyed', () => {
+    const originalClearTimeout = global.clearTimeout;
+
+    let clearedTimeoutId = null;
+
+    global.clearTimeout = (timeoutId) => {
+        clearedTimeoutId = timeoutId;
+    };
+
+    try {
+        const client = new AuctionClient(
+            '01TESTAUCTIONULID'
+        );
+
+        client.nominationExpiryResyncTimeoutId = 456;
+
+        client.destroy();
+
+        assert.equal(
+            clearedTimeoutId,
+            456
+        );
+
+        assert.equal(
+            client.nominationExpiryResyncTimeoutId,
+            null
+        );
+    } finally {
+        global.clearTimeout = originalClearTimeout;
     }
 });

@@ -10,6 +10,7 @@ export default class AuctionClient {
         this.nominationRemainingMilliseconds = 0;
         this.nominationCountdownIntervalId = null;
         this.nominationCountdownListener = null;
+        this.nominationExpiryResyncTimeoutId = null;
         this.snapshotListener = null;
         this.auctionChannel = null;
         this.realtimeStateChangeListener = null;
@@ -150,13 +151,20 @@ export default class AuctionClient {
             }
         );
 
+        let payload = null;
+
+        try {
+            payload = await response.json();
+        } catch {
+            //
+        }
+
         if (!response.ok) {
             throw new Error(
+                payload?.message ??
                 `Unable to confirm auction nomination (${response.status}).`
             );
         }
-
-        const payload = await response.json();
 
         if (!payload?.data) {
             throw new Error(
@@ -179,13 +187,20 @@ export default class AuctionClient {
             }
         );
 
+        let payload = null;
+
+        try {
+            payload = await response.json();
+        } catch {
+            //
+        }
+
         if (!response.ok) {
             throw new Error(
+                payload?.message ??
                 `Unable to reject auction nomination (${response.status}).`
             );
         }
-
-        const payload = await response.json();
 
         if (!payload?.data) {
             throw new Error(
@@ -321,18 +336,64 @@ export default class AuctionClient {
         return this.nominationRemainingMilliseconds;
     }
 
+    scheduleNominationExpiryResync() {
+        if (this.nominationExpiryResyncTimeoutId !== null) {
+            return this.nominationExpiryResyncTimeoutId;
+        }
+
+        this.nominationExpiryResyncTimeoutId = setTimeout(
+            async () => {
+                this.nominationExpiryResyncTimeoutId = null;
+
+                try {
+                    await this.resync();
+                } catch {
+                    //
+                }
+            },
+            5000
+        );
+
+        return this.nominationExpiryResyncTimeoutId;
+    }
+
+    cancelNominationExpiryResync() {
+        if (this.nominationExpiryResyncTimeoutId === null) {
+            return;
+        }
+
+        clearTimeout(
+            this.nominationExpiryResyncTimeoutId
+        );
+
+        this.nominationExpiryResyncTimeoutId = null;
+    }
+
     startNominationCountdown() {
         if (this.nominationCountdownIntervalId !== null) {
             return this.nominationCountdownIntervalId;
         }
 
         this.nominationCountdownIntervalId = setInterval(
-            () => {
+            async () => {
                 const remainingMilliseconds =
                     this.updateNominationCountdown();
 
                 if (remainingMilliseconds === 0) {
                     this.stopNominationCountdown();
+
+                    try {
+                        await this.resync();
+
+                        if (
+                            this.state?.active_nomination &&
+                            this.getRemainingNominationMilliseconds() === 0
+                        ) {
+                            this.scheduleNominationExpiryResync();
+                        }
+                    } catch {
+                        //
+                    }
                 }
             },
             1000
@@ -372,6 +433,10 @@ export default class AuctionClient {
             );
 
             this.auctionChannel = null;
+        }
+
+        if (this.nominationExpiryResyncTimeoutId !== null) {
+            this.cancelNominationExpiryResync();
         }
     }
 

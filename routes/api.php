@@ -1,7 +1,14 @@
 <?php
 
 use App\Http\Controllers\Auction\Api\AuctionController;
+use App\Http\Controllers\Auth\Api\RegistrationAvailabilityController;
 use Illuminate\Support\Facades\Route;
+
+Route::get(
+    '/register/availability',
+    RegistrationAvailabilityController::class
+)->middleware('throttle:30,1')
+    ->name('register.availability');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auctions/{auction}', [AuctionController::class, 'show']);

@@ -94,8 +94,11 @@ export async function bootstrapAuctionPage({
                 snapshot.participants ?? [];
 
             if (participants.length === 0) {
-                participantsElement.innerHTML =
-                    '<p>Nessun partecipante</p>';
+                participantsElement.innerHTML = `
+    <p class="rounded-xl bg-surface-50 p-4 text-sm text-surface-500">
+        Nessun partecipante
+    </p>
+`;
             } else {
                 participantsElement.innerHTML =
                     participants
@@ -117,22 +120,48 @@ export async function bootstrapAuctionPage({
                                     ?.participant_ulid === participant.ulid;
 
                             return `
-            <div>
-                <span>${escapeHtml(team.name)}</span>
-                <span>${team.current_balance}</span>
+    <div class="flex flex-col gap-3 rounded-xl bg-surface-50 p-4 ring-1 ring-inset ring-surface-200 sm:flex-row sm:items-center sm:justify-between">
+        <div class="min-w-0">
+            <p class="truncate font-bold text-surface-900">
+                ${escapeHtml(team.name)}
+            </p>
+
+            <div class="mt-1 flex flex-wrap items-center gap-2 text-xs font-medium text-surface-600">
                 <span>
                     Posizione ${participant.nomination_position}
                 </span>
+
                 ${isCurrentNominator
-                                    ? '<span>Nominatore corrente</span>'
+                                    ? `
+                        <span class="rounded-full bg-brand-100 px-2 py-1 font-semibold text-brand-700">
+                            Nominatore corrente
+                        </span>
+                    `
                                     : ''
                                 }
+
                 ${isCurrentHighestBidder
-                                    ? '<span>Miglior offerente</span>'
+                                    ? `
+                                    <span class="rounded-full bg-accent-100 px-2 py-1 font-semibold text-accent-700">
+                                        Miglior offerente
+                                    </span>
+                                `
                                     : ''
                                 }
-            </div>
-        `;
+                        </div>
+                    </div>
+
+                    <div class="shrink-0 sm:text-right">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-surface-500">
+                            Crediti
+                        </p>
+
+                        <p class="mt-1 text-xl font-black text-surface-900">
+                            ${team.current_balance}
+                        </p>
+                    </div>
+                </div>
+            `;
                         })
                         .join('');
             }
@@ -161,32 +190,33 @@ export async function bootstrapAuctionPage({
                 )
             ) {
                 bidControlsElement.innerHTML = '';
+            } else {
+                bidControlsElement.innerHTML = `
+                    <button
+                        type="button"
+                        data-bid-increment="1"
+                        class="inline-flex min-w-16 items-center justify-center rounded-lg bg-accent-400 px-4 py-2.5 text-sm font-black text-surface-900 shadow-sm transition hover:bg-accent-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        +1
+                    </button>
 
-                return;
+                    <button
+                        type="button"
+                        data-bid-increment="5"
+                        class="inline-flex min-w-16 items-center justify-center rounded-lg bg-accent-400 px-4 py-2.5 text-sm font-black text-surface-900 shadow-sm transition hover:bg-accent-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        +5
+                    </button>
+
+                    <button
+                        type="button"
+                        data-bid-increment="10"
+                        class="inline-flex min-w-16 items-center justify-center rounded-lg bg-accent-400 px-4 py-2.5 text-sm font-black text-surface-900 shadow-sm transition hover:bg-accent-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        +10
+                    </button>
+                `;
             }
-
-            bidControlsElement.innerHTML = `
-        <button
-            type="button"
-            data-bid-increment="1"
-        >
-            +1
-        </button>
-
-        <button
-            type="button"
-            data-bid-increment="5"
-        >
-            +5
-        </button>
-
-        <button
-            type="button"
-            data-bid-increment="10"
-        >
-            +10
-        </button>
-    `;
         }
 
         const presidentControlsElement = element.querySelector(
@@ -206,15 +236,32 @@ export async function bootstrapAuctionPage({
                         ?.can_reject_nomination === true;
 
                 presidentControlsElement.innerHTML = `
-            ${canConfirm
-                        ? '<button type="button" data-auction-confirm-nomination>Conferma</button>'
+                    ${canConfirm
+                        ? `
+                            <button
+                                type="button"
+                                data-auction-confirm-nomination
+                                class="inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                Conferma
+                            </button>
+                        `
                         : ''
                     }
-            ${canReject
-                        ? '<button type="button" data-auction-reject-nomination>Rifiuta</button>'
+
+                    ${canReject
+                        ? `
+                            <button
+                                type="button"
+                                data-auction-reject-nomination
+                                class="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                Rifiuta
+                            </button>
+                        `
                         : ''
                     }
-        `;
+                `;
             }
         }
     };

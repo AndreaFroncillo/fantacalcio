@@ -2,15 +2,17 @@
 
 namespace Database\Seeders;
 
+use App\Domain\Auction\Actions\InitializeAuction;
+use App\Domain\Auction\Actions\StartAuction;
 use App\Domain\Football\Enums\PlayerRole;
+use App\Domain\Market\Enums\MarketCapabilityType;
 use App\Models\Auction\Auction;
-use App\Models\Auction\AuctionParticipant;
-use App\Models\Auction\AuctionRolePhase;
 use App\Models\Credit\TeamCreditAccount;
 use App\Models\Football\FootballSeason;
 use App\Models\Football\PlayerSeason;
 use App\Models\League\League;
 use App\Models\League\LeagueMembership;
+use App\Models\Market\MarketCapability;
 use App\Models\Market\MarketSession;
 use App\Models\Roster\LeagueSeasonRosterRule;
 use App\Models\Season\LeagueSeason;
@@ -22,8 +24,10 @@ use Illuminate\Support\Facades\Hash;
 
 class DemoAuctionSeeder extends Seeder
 {
-    public function run(): void
-    {
+    public function run(
+        InitializeAuction $initializeAuction,
+        StartAuction $startAuction
+    ): void {
         $user = User::factory()->create([
             'name' => 'Andrea Demo',
             'email' => 'demo@fantacalcio.test',
@@ -50,11 +54,32 @@ class DemoAuctionSeeder extends Seeder
                 'initial_credits' => 500,
             ]);
 
-        LeagueSeasonRosterRule::factory()->create([
-            'league_season_id' => $leagueSeason->id,
-            'role' => PlayerRole::GOALKEEPER,
-            'max_players' => 3,
-        ]);
+        $rosterRules = [
+            [
+                'role' => PlayerRole::GOALKEEPER,
+                'max_players' => 3,
+            ],
+            [
+                'role' => PlayerRole::DEFENDER,
+                'max_players' => 8,
+            ],
+            [
+                'role' => PlayerRole::MIDFIELDER,
+                'max_players' => 8,
+            ],
+            [
+                'role' => PlayerRole::FORWARD,
+                'max_players' => 6,
+            ],
+        ];
+
+        foreach ($rosterRules as $rule) {
+            LeagueSeasonRosterRule::factory()->create([
+                'league_season_id' => $leagueSeason->id,
+                'role' => $rule['role'],
+                'max_players' => $rule['max_players'],
+            ]);
+        }
 
         $participation = SeasonParticipation::factory()->create([
             'league_season_id' => $leagueSeason->id,
@@ -80,25 +105,20 @@ class DemoAuctionSeeder extends Seeder
                 'name' => 'Asta Estiva Demo',
             ]);
 
-        $auction = Auction::factory()
-            ->live()
+        MarketCapability::factory()
+            ->enabled()
             ->create([
                 'market_session_id' => $marketSession->id,
+                'type' => MarketCapabilityType::AUCTION,
             ]);
 
-        AuctionRolePhase::factory()
-            ->active()
-            ->create([
-                'auction_id' => $auction->id,
-                'role' => PlayerRole::GOALKEEPER,
-                'position' => 1,
-            ]);
-
-        AuctionParticipant::factory()->create([
-            'auction_id' => $auction->id,
-            'team_id' => $team->id,
-            'nomination_position' => 1,
+        $auction = Auction::factory()->create([
+            'market_session_id' => $marketSession->id,
         ]);
+
+        $auction = $initializeAuction->execute($auction);
+
+        $auction = $startAuction->execute($auction);
 
         $footballSeason = FootballSeason::factory()
             ->active()
@@ -108,12 +128,14 @@ class DemoAuctionSeeder extends Seeder
                 'end_year' => 2027,
             ]);
 
-        PlayerSeason::factory()
-            ->count(20)
-            ->create([
-                'football_season_id' => $footballSeason->id,
-                'role' => PlayerRole::GOALKEEPER,
-            ]);
+        foreach (PlayerRole::cases() as $role) {
+            PlayerSeason::factory()
+                ->count(20)
+                ->create([
+                    'football_season_id' => $footballSeason->id,
+                    'role' => $role,
+                ]);
+        }
 
         $this->command?->info(
             'Demo user: demo@fantacalcio.test'

@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0">
@@ -17,7 +18,7 @@
     ])
 </head>
 
-<body class="min-h-screen bg-gray-50 text-gray-900">
+<body class="min-h-screen bg-surface-100 text-surface-900">
     <main class="flex min-h-screen items-center justify-center px-4 py-12">
         <div class="w-full max-w-md">
             {{ $slot }}

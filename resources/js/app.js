@@ -2,21 +2,11 @@ import './echo';
 
 import Alpine from 'alpinejs';
 
-import {
-    bootstrapAuctionPage,
-} from './auction/bootstrapAuctionPage.js';
+import './navbar/navbar.js';
+import './auction/auction.js';
+import './clubs/clubs.js';
+import './auth/auth.js';
 
 window.Alpine = Alpine;
 
 Alpine.start();
-
-const auctionPage = document.querySelector(
-    '[data-auction-ulid]'
-);
-
-if (auctionPage) {
-    bootstrapAuctionPage({
-        element: auctionPage,
-        echo: window.Echo,
-    });
-}
