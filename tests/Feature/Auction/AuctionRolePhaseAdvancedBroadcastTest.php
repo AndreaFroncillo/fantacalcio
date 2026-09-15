@@ -68,7 +68,7 @@ class AuctionRolePhaseAdvancedBroadcastTest extends TestCase
         $this->assertCount(1, $channels);
 
         $this->assertSame(
-            'private-auction.' . $nextPhase->auction->ulid,
+            'private-auction.'.$nextPhase->auction->ulid,
             $channels[0]->name
         );
     }

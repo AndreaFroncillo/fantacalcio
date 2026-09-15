@@ -38,7 +38,7 @@ class AuctionBroadcastChannelTest extends TestCase
         $response = $this
             ->actingAs($user, 'sanctum')
             ->postJson('/api/broadcasting/auth', [
-                'channel_name' => 'private-auction.' . $auction->ulid,
+                'channel_name' => 'private-auction.'.$auction->ulid,
                 'socket_id' => '1234.5678',
             ]);
 
@@ -54,7 +54,7 @@ class AuctionBroadcastChannelTest extends TestCase
         $response = $this
             ->actingAs($user, 'sanctum')
             ->postJson('/api/broadcasting/auth', [
-                'channel_name' => 'private-auction.' . $auction->ulid,
+                'channel_name' => 'private-auction.'.$auction->ulid,
                 'socket_id' => '1234.5678',
             ]);
 
@@ -77,7 +77,7 @@ class AuctionBroadcastChannelTest extends TestCase
         $response = $this
             ->actingAs($user, 'sanctum')
             ->postJson('/api/broadcasting/auth', [
-                'channel_name' => 'private-auction.' . $auction->ulid,
+                'channel_name' => 'private-auction.'.$auction->ulid,
                 'socket_id' => '1234.5678',
             ]);
 
@@ -89,7 +89,7 @@ class AuctionBroadcastChannelTest extends TestCase
         $auction = Auction::factory()->create();
 
         $response = $this->postJson('/api/broadcasting/auth', [
-            'channel_name' => 'private-auction.' . $auction->ulid,
+            'channel_name' => 'private-auction.'.$auction->ulid,
             'socket_id' => '1234.5678',
         ]);
 

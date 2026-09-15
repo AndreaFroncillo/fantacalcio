@@ -2,6 +2,7 @@
 
 namespace App\Events\Auction;
 
+use App\Domain\Auction\Enums\AuctionRolePhaseStatus;
 use App\Models\Auction\Auction;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -21,7 +22,7 @@ class AuctionStarted implements ShouldBroadcast, ShouldDispatchAfterCommit
     {
         return [
             new PrivateChannel(
-                'auction.' . $this->auction->ulid
+                'auction.'.$this->auction->ulid
             ),
         ];
     }
@@ -35,7 +36,7 @@ class AuctionStarted implements ShouldBroadcast, ShouldDispatchAfterCommit
     {
         $activePhase = $this->auction
             ->rolePhases
-            ->firstWhere('status', \App\Domain\Auction\Enums\AuctionRolePhaseStatus::ACTIVE);
+            ->firstWhere('status', AuctionRolePhaseStatus::ACTIVE);
 
         return [
             'auction_ulid' => $this->auction->ulid,

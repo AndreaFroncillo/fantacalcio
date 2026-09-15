@@ -21,7 +21,7 @@ class AuctionNominationStarted implements ShouldBroadcast, ShouldDispatchAfterCo
     {
         return [
             new PrivateChannel(
-                'auction.' . $this->nomination->auction->ulid
+                'auction.'.$this->nomination->auction->ulid
             ),
         ];
     }

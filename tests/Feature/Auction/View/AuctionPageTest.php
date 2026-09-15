@@ -36,8 +36,7 @@ class AuctionPageTest extends TestCase
 
         $response->assertViewHas(
             'auction',
-            fn(Auction $viewAuction) =>
-            $viewAuction->is($auction)
+            fn (Auction $viewAuction) => $viewAuction->is($auction)
         );
     }
 

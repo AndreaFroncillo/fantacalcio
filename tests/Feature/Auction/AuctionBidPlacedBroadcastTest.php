@@ -41,7 +41,7 @@ class AuctionBidPlacedBroadcastTest extends TestCase
         $this->assertCount(1, $channels);
 
         $this->assertSame(
-            'private-auction.' . $bid->nomination->auction->ulid,
+            'private-auction.'.$bid->nomination->auction->ulid,
             $channels[0]->name
         );
     }

@@ -21,7 +21,7 @@ class AuctionBidPlaced implements ShouldBroadcast, ShouldDispatchAfterCommit
     {
         return [
             new PrivateChannel(
-                'auction.' . $this->bid->nomination->auction->ulid
+                'auction.'.$this->bid->nomination->auction->ulid
             ),
         ];
     }

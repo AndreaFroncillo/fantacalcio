@@ -53,7 +53,7 @@ class AuctionStartedBroadcastTest extends TestCase
             $channels[0]
         );
         $this->assertSame(
-            'private-auction.' . $auction->ulid,
+            'private-auction.'.$auction->ulid,
             $channels[0]->name
         );
     }

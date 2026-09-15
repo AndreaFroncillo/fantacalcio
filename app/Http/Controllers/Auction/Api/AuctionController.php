@@ -32,11 +32,11 @@ class AuctionController extends Controller
         Gate::authorize('view', $auction);
 
         $auction->load([
-            'rolePhases' => fn($query) => $query
+            'rolePhases' => fn ($query) => $query
                 ->where('status', AuctionRolePhaseStatus::ACTIVE)
                 ->orderBy('position'),
 
-            'nominations' => fn($query) => $query
+            'nominations' => fn ($query) => $query
                 ->where('status', AuctionNominationStatus::ACTIVE)
                 ->with([
                     'playerSeason.footballPlayer',
@@ -46,7 +46,7 @@ class AuctionController extends Controller
                 ])
                 ->orderByDesc('id'),
 
-            'participants' => fn($query) => $query
+            'participants' => fn ($query) => $query
                 ->with('team.creditAccount')
                 ->orderBy('nomination_position'),
         ]);

@@ -32,6 +32,7 @@ return [
         'no_account' => 'Non hai un account?',
         'register' => 'Registrati',
         'identifier' => 'Email o username',
+        'logout' => 'Esci',
     ],
 
     'register' => [

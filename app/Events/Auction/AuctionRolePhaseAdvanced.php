@@ -22,7 +22,7 @@ class AuctionRolePhaseAdvanced implements ShouldBroadcast, ShouldDispatchAfterCo
     {
         return [
             new PrivateChannel(
-                'auction.' . $this->nextPhase->auction->ulid
+                'auction.'.$this->nextPhase->auction->ulid
             ),
         ];
     }
